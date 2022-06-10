@@ -4,19 +4,22 @@ function [Thr] = findoptRth(calcium)
 %connections per islet
 % Jennifer Briggs, 2021
 
+upper = 8 %set average number of connections
 
 addpath('C:\Users\Jennifer Briggs\Documents\GitHub\UniversalCode_Briggs\UniversalCode\FMINSEARCHBND')
 [Rij, pval]=corr(calcium);
 
 fun = @(x)Lfunc(x,calcium,Rij); % Defines the cost function
-x0 = .90;
-numcells = size(calcium,2);
-Rij = Rij-diag(diag(Rij))
+x0 = .90; %originial threshold
+numcells = size(calcium,2); 
+Rij = Rij-diag(diag(Rij)); %removes ones on diagonal
 Rijs = sort(Rij);
-av = mean(Rijs(end-8:end,:))
-avs = sort(av)
-ub = mean(avs(end-8:end))
-Thr = fminsearchbnd(fun,x0, [.6], ub); %Find spring constant using the simplex method
+av = mean(Rijs(end-upper-1:end,:)); %calculates the average correlation coeffiecient for top 9 highest correlated cell pairs [9 x numcells]
+avs = sort(av); %Gives average correlation for top 9 highest correlated cellpairs
+ub = mean(avs(end-upper-1:end)); %Upper bound is set to be the average correlation for the top 9
+
+%run optimization: fminsearchbnd can be downloaded here https://www.mathworks.com/matlabcentral/fileexchange/8277-fminsearchbnd-fminsearchcon
+Thr = fminsearchbnd(fun,x0, [.6], ub); %Find threshold that most fits power law while staying within upper and lower bounds
 
 
 end

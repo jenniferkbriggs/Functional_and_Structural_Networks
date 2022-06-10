@@ -1,22 +1,35 @@
 function [N, Adj, kpercent, histArrayPercShort,pval,Rij,s] = links(calciumT, Threshold, Opts,fig)%ii, mm, phase, figs)
-%% Network analysis for PLOScomp paper 2020
+%% Network analysis
 % Jennifer Briggs 12/2020
 % This program was adapted from an original program by Vira Kravets (Apr
-% 2020) who adapted the technique from Stozer
-%% THIS PROGRAM CALCULATES COVARIANCE BETWEEN ALL CELLS, ADJACENCY MATRIX, probability of links, and plots links (cov>threshold) 
-%% INPUT PARAMETERS: NUMBER OF CELLS, TIME INTERVAL, CALCIUM TIMELAPSE DATA AS TABLE, XY table of cell positions 
-% Reiqured opts: 
-%printasSubplot, figs
-% If use print as subplot, also need:
-%Subplotnum
+% 2020) who adapted the technique from Stozer 2013
 
+%% THIS PROGRAM CALCULATES COVARIANCE BETWEEN ALL CELLS, ADJACENCY MATRIX, probability of links, and plots links (cov>threshold) 
+%% INPUT PARAMETERS:
+% calciumT = calcium time course;
+% Threshold = Rth between 0 and 1 (usually somewhere from 0.8-0.99)
+% Opts: structure with options
+    % Reiqured opts: 
+    % figs
+    % If use print as subplot, also need:
+    % Subplotnum
+%fig sets the figure number
+
+if ~exist('fig')
+    fig = 1;
+end
+    
 figs = Opts.figs;
 if figs == 1
-if Opts.printasSubplot == 1 
-    mm = Opts.Subplotnum;
+    try
+        if Opts.printasSubplot == 1 
+            mm = Opts.Subplotnum;
+        end
+    catch
+        Opts.printasSubplot = 0;
+    end
 end
-end
-[data numcells]=size(calciumT);                                       % enter number of cells  
+[data numcells]=size(calciumT);                                     
 
 time = [1: size(calciumT,1)];
 
@@ -24,29 +37,20 @@ time = [1: size(calciumT,1)];
 % as well as P-values for each Rij, and the critical Rij values.
     [Rij, pval]=corr(calciumT);
     
-%     figure
-%     imagesc(Rij);
-%     title('Pearson product moment, norm for timelength, RijN')
-%     colorbar
-%     figure
-%     imagesc(pval);
-%     title('Statistical Significance')
-%     colorbar
-% 
-%     t = ((Rij.^2*(length(time) - 2))./(1-(Rij.^2))).^(1/2);
-%     p=1-tcdf(t,length(time)-1);                          % p value from the Matlab help
+    
+    if figs
+    figure(fig)
+    fig = fig+1;
+    imagesc(Rij);
+    title('Pearson product moment, norm for timelength, RijN')
+    colorbar
+    figure
+    imagesc(pval);
+    title('Statistical Significance')
+    colorbar
+    end
 
 
-% 
-% b = calciumT(:,2)\calciumT(:,1);
-% yCalc = b*calciumT(:,2);
-% %yCalc = RijN(1,2)*calciumT(:,1);
-% %yCalc2 = RijN(1,2)*calciumT(:,2);
-% figure
-% scatter(calciumT(:,2),calciumT(:,1))
-% hold on
-% plot(calciumT(:,2), yCalc)
-% %plot(calciumT(:,2), yCalc2+150)
 
 %% 3. Making a link map
 %disp(mean2(Rij))
@@ -56,10 +60,14 @@ Adj(Adj < Threshold) = 0;
 % 
  Adj = Adj - diag(diag(Adj));             % replacing diagonal elemants with 0s to account for self-correlation
 %disp(mean2(Adj))
- %     figure(3)
-%     imagesc(Adj);
-%     title('Adjacency matrix')
-%     colorbar
+
+if figs
+    figure(fig);
+    fig = fig+1;
+    imagesc(Adj);
+    title('Connection Map')
+    colorbar
+end
 
 %% 4. Determine number of "links" based on cov threshold
 for i=1:numcells
@@ -95,12 +103,15 @@ loghist(isinf(loghist))=[];
 [s] = corrcoef(log(xlab),loghist);
 s = s(2);
 %
+if figs
+    figure(fig)           % plot a bar graph of the probability of a cell to have k links
+    fig = fig+1;
+    bar(k,histArrayShort)
+    title('Probability to have k links,(%)')
+    xlabel('Number of links');
+    ylabel('Number of cells')
+end
 
-% figure(4)           % plot a bar graph of the probability of a cell to have k links
-% bar(k,histArrayShort)
-% title('Probability to have k links,(%)')
-% xlabel('Number of links');
-% ylabel('Number of cells')
 if figs == 1
     fig2 = figure(fig),hold on;
     fig2.Position = [325 32 1132 892.5000];

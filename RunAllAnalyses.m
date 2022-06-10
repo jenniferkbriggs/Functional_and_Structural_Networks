@@ -1,8 +1,12 @@
-%Network Analysis for Size Dependence%
+%This is the main script which loads all of the calcium data and runs
+%analyses used in Briggs et al., 2022
+% Jennifer Briggs, 2021
+
 clear all
 close all
-mac = 1
-if mac == 1
+
+% setting paths and defining data location
+
 addpath('~/Documents/GitHub/UniversalCode/');
 addpath('~/Documents/GitHub/Simulation-Analysis/');
 addpath('~/Documents/GitHub/Simulations/');
@@ -10,58 +14,41 @@ addpath('~/Documents/GitHub/Network-Analysis/');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%
 savetime =  datestr(datetime('today'),'yyyymmdd');
-freqcalc = 0
-%datapath = 'D:\Islet\SizeDependance\Size_depend'
-%dataset2 = {'50cell','100cell','300cell','1000cell','2000cell','3000cell'}
-%dataset2 = {'FullCoup/1000cell', 'HalfCoup_0311/1000cell', 'QuartCoup_0311/1000cell'}
-%dataset2 = {'FullCoup\1000cell', 'FullCoup\1000cell', 'FullCoup\1000cell', 'FullCoup\1000cell', 'FullCoup\1000cell'}%,'HalfCoup_0311\1000cell','QuartCoup_0311\1000cell'}
+
+%%Things you set!
 dataset2 = {'FullCoup/1000cell'}
 dataname = {'/seed1/', '/seed2/','/seed3/','/seed4/','/seed5/'}
-datapath = '/Volumes/Briggs_2TB/SizeDependence'
+datapath = '/Volumes/Briggs_10TB/SizeDependence'
 slash = '/';
-else
-addpath('~/UniversalCode/');
-slash = '/';
-%addpath('~/Simulation-Analysis/');
-addpath('~/Simulations/');
-%%%%%%%%%%%%%%%%%%%%%%%%%%
-savetime =  datestr(datetime('today'),'yyyymmdd');
-freqcalc = 0
-%datapath = 'D:\Islet\SizeDependance\Size_depend'
-%dataset2 = {'50cell','100cell','300cell','1000cell','2000cell','3000cell'}
-dataset2 = {'FullCoup/1000cell', 'FullCoup/1000cell', 'FullCoup/1000cell'}%, 'FullCoup/1000cell', 'FullCoup/1000cell'}%,'HalfCoup_0311\1000cell','QuartCoup_0311\1000cell'}
-dataname = {'/seed1/', '/seed2/','/seed3/','/seed4/','/seed5/'}
-datapath = '~/Documents/SizeDependenceIslet/'  
-end
-%Names = {'All', 'P2', 'P1'}
-%Names = {'.9997', '.9998', '.9999', '.99991' '.99992'}
+cellperc = .1; %percentage of cells to look at
 Names = {'gCoup = .12 pS' ,'gCoup = .06 pS', 'gCoup = .03 pS'};
-%Names = {'P2'}
 Threshold = .9995; %Set R_th for network analysis
-%Threshold = [.9997, .9998, .9999, .99991, .99992];
-savename = ['2nd_PhaseXcor' savetime];
+
+savename = ['2nd_PhaseXcor' savetime]; 
+
+gjconnectionprob = 1 %define whether network to compare to functional network is gj connections or metabolism
+%%% 
+
 %Set options for network analysis
 Opts.figs = 0;
 Opts.change_thres = 0;
 Opts.chage_phase = 0;
 Opts.printasSubplot = 1;
-%Set the last number to 0 always, first number is rows second is columns
-Opts.subplotdim = 310;
+Opts.subplotdim = 310; %Set the last number to 0 always, first number is rows second is columns
 Opts.multiseed = 1;
 
-fig = 1
+fig = 1; %counter for figures
+
+%define data lengths
 seeds = length(dataname);
 Isizes = length(dataset2);
+
+
 %% Import Data
-% try 
-%     for l = 1:length(dataset2)
-%     for i = 1:length(dataname)
-%     load([savename '.mat'])
-%     end
-%     end
-% catch
+
 ca = struct;
 Rvars = struct;
+
 tic
 for l = 1:length(dataset2)
     for i = 1:length(dataname)
@@ -88,15 +75,9 @@ for l = 1:length(dataset2)
     connpath = fullfile(datapath, dataset2(l), dataname(i), 'NN10A.txt');
     conn(l).data(:,:,i) = importdata(cell2mat(connpath));    
     calcium = ca2(l).data(:,:,i);    
-    ca(l).data(:,:,i) = calcium(2000:end,:);
-%     if l == 1
-% %     calcium = importdata(cell2mat(connpath));    
-%     ca(l).data(:,:,i) = calcium;
-%     elseif l == 2
-%     ca(l).data(:,:,i) = calcium(2000:end,:);
-%     elseif l == 3
-%     ca(l).data(:,:,i) = calcium(1:750,:);
-%     end
+    ca(l).data(:,:,i) = calcium(2000:end,:); %second phase only
+
+    
     varspath = fullfile(datapath, dataset2(l), dataname(i), 'RandomVars.txt');
     Rvars(l).data(:,:,i) = importdata(cell2mat(varspath));
     Rvars(l).name = dataset2(l);
@@ -107,17 +88,11 @@ for l = 1:length(dataset2)
     plot(ca(l).data), xlabel('Time'), ylabel('Ca'), title(dataset2(l))
     end
     
-    
-
-    
+   
     end
 end
 toc
-% try
-%     ca(2).data(4997:end,:,:)=[];
-% catch
-%     disp('error')
-% end
+
 clear casize sizes sizemin seed min tt
 
 fig1.Position = [325 32 1132 892.5000];
@@ -130,37 +105,20 @@ Links2.cellsort = struct;
 fig = fig+1;
 for l = 1:length(dataset2)
     for i = 1:length(dataname)
-     Opts.printasSubplot = 1;
-        Opts.Subplotnum = l;
-    
-    Opts.multiseednum = i;
+        
+     Opts.printasSubplot = 1;  Opts.Subplotnum = l; Opts.multiseednum = i; %define options
+     
+     %run links analysis
     [Links2.N(l).data(:,i), adjm(l).data(:,:,i), kperc(l).Islet(i).data , histArrayPercShort(i).data, Rij(l).Islet(i).data(:,:) ] = links(ca(l).data(:,:,i), Threshold,Opts,fig); %%This is where network analysis is perfromed
-%        [Links2.N(l).data(:,i), adjm(l).data(:,:,i), kperc(l).Islet(i).data , histArrayPercShort(i).data] = linksXcor(ca(l).data(:,:,i), Threshold,Opts,fig,cormat); %%This is where network analysis is perfromed
 
+    %sort
    [Links2.sort(l).data(:,i), Links2.cellsort(l).data(:,i)]= sort(Links2.N(l).data(:,i));
     end
 end
 
-% end
 
-%% Calculate phase
-phaseinfo = struct
-phaseinfo.cell = struct;
-if 0
-for i = 1:Isizes
-    for l = 1:seeds
-%        disp(['Calculating ' cell2mat(dataset2(i))])
-       [ phaseinfo.phase(i).data(:,l),cormat(:,:,l),cormattime(:,:,l)] = phase(ca(i).data(:,:,l),0,0); %time is in ms
-        [psort,pcell]  = sort(phaseinfo.phase(i).data(:,l));
-        phaseinfo.sort(i).data(:,l) = psort;
-        phaseinfo.cell(i).data(:,l) = pcell;
-
-    end
-end
-end
-
-%% Plot for Kglyc
-cellperc = .1;
+%% Extract cell parameters
+%predefine objects
 Kglyc = struct;
 Kglyc.sort = struct;
 Kglyc.cell = struct;
@@ -187,25 +145,16 @@ for l = 1:length(dataset2)
     Links2.high(l).data(:,i) = (Links2.cellsort(l).data(end-numcell:end,i));
     Links2.rand(l).data(:,i) = (Links2.cellsort(l).data(randomcell,i));
     Links2.low(l).data(:,i) = (Links2.cellsort(l).data(1:numcell,i));
+    
     a = find(kperc(l).Islet(i).data  > 60);
     hubthreshold = (a(1));
     b = find(kperc(l).Islet(i).data  <= 60);
+    
     connect = sum(adjm(l).data(:,:,i));
-    Hubs(l).hubby(i).data = find(connect>hubthreshold);%Number of cells linked to more than 50% of Islet
+    Hubs(l).hubby(i).data = find(connect>hubthreshold);%Number of cells linked to more than 60% of Islet
     hubby = Hubs(l).hubby(i).data;
-    %     G = graph(adjm(l).data(:,:,i), 'omitselfloops');
-%     c = centrality(G, 'betweenness');
-%     cnorm = c/max(c);
-%     fig = fig+1
-%     figure(fig)
-%     histogram(cnorm)
-%     hubby = find(cnorm > .6);
-%     hublow = find(cnorm <= .6);
-%    	Hubs(l).hubby(i).data=hubby;
-% 
-%     sam = intersect(hubby, find(connect>hubthreshold))
-%     title(['Seed ' num2str(i) ' Distribution of centrality'])
-%     text(.5, 400,['Percent of Sustained Hubs = ' num2str(length(sam)/length(hubby)) ' & ' num2str(length(sam)/length(Hubs(l).hubby(i).data)) 'from original'])
+    
+   
 	hublow = find(connect<=hubthreshold);
     Hubs(l).hublow(i).data = hublow%find(connect<b(end));%Number of cells linked to more than 50% of Islet
     hubmid = [1:1000];%Number of cells linked to more than 50% of Islet
@@ -220,10 +169,12 @@ for l = 1:length(dataset2)
     Links2.low(l).data(:,i) = (Links2.cellsort(l).data(1:numcell,i));
     
     Kglyc.hubs(l).data(:,i) = mean(Kglyc.kglyc(l).data(hubby,i));
-%     Kglyc.hubsmid(l).data(:,i) = mean(Kglyc.kglyc(l).data(hubmid,i));
+    Kglyc.hubsmid(l).data(:,i) = mean(Kglyc.kglyc(l).data(hubmid,i));
     Kglyc.hubslow(l).data(:,i) = mean(Kglyc.kglyc(l).data(hublow,i));
-        Conny = sum((conn(1).data(:,:,i)~=-1)');
-   TotConn.hubs(l).data(:,i) =mean(Conny(hubby));
+    Conny = sum((conn(1).data(:,:,i)~=-1)');
+    
+    
+    TotConn.hubs(l).data(:,i) =mean(Conny(hubby));
 %     Kglyc.hubsmid(l).data(:,i) = mean(Kglyc.kglyc(l).data(hubmid,i));
     TotConn.hubslow(l).data(:,i) = mean(Conny(hublow));
     
@@ -235,6 +186,10 @@ for l = 1:length(dataset2)
     Kglyc.rand(l).data(:,i) = mean(Kglyc.kglyc(l).data(Links2.rand(l).data,i));
     Kglyc.low(l).data(:,i) = mean(Kglyc.kglyc(l).data(Links2.low(l).data,i));
    
+
+    
+    
+    % average GJ conductance
     gjconn = conn(1).data(:,:,i);
     gjconn = gjconn + 1;
     
@@ -245,8 +200,7 @@ for l = 1:length(dataset2)
             conduct(tt) = Rvars(l).data(connections(tt),2,i);
         end          
         GJconduct(i).data(t) = sum(0.5*(conduct + Rvars(l).data(t,2,i)));
-                clear conduct
-
+         clear conduct
     end
      
     Gcoup.hubs(l).data(:,i) = mean(GJconduct(i).data(hubby));
@@ -257,117 +211,54 @@ for l = 1:length(dataset2)
     Gcoup.rand(l).data(:,i) = mean(Rvars(l).data(Links2.rand(l).data,2,i));
     Gcoup.low(l).data(:,i) = mean(Rvars(l).data(Links2.low(l).data,2,i));
     end
-    %%%%%%%%%%%  
+    
+    %%%%%%%%%%% plots
     if Opts.figs
-fig = fig+1
-figure(fig)
-%     if length(dataset2) >1
-%     subplot(Opts.subplotdim+l)
-%     end
+        fig = fig+1
+        figure(fig)
+
     [h] = multiseedplotsave(fig,[Gcoup.high(l).data; Gcoup.rand(l).data; Gcoup.low(l).data], ...
         ['Average Coupling Conductance for cells sorted by links_' Names{l}], ...
         {'Highest 10% Links', 'Rand 10% Links', 'Lowest 10% Links'},...
         {'gCoup [pS]'}, [savename '_Gcoup' Names{l}])
-%     set(gca,'XTickLabel',{'Hubs (>60% synchronization)', 'Mid Links (30% - 60%)', 'Low Links (< 30% synchronization)'});
-%     title({'Average Coupling Conductance for cells sorted by links' '(Islet Size = ' num2str(cellnum) 'cells)'})
-%     ylabel({'gCoup [pS]'})
- fig = fig +1;
-[h] = multiseedplotsave(fig,[Gcoup.hubs(l).data;Gcoup.hubslow(l).data], ...
-        ['Katp' Names{l}], ...
-        {'Hubs (>60% synchronization)', 'Low Links (< 20% synchronization)'},...
-        {'Katp '}, [savename 'Katp' Names{l}])
+
+    
+    fig = fig +1;
+    [h] = multiseedplotsave(fig,[Gcoup.hubs(l).data;Gcoup.hubslow(l).data], ...
+            ['Katp' Names{l}], ...
+            {'Hubs (>60% synchronization)', 'Low Links (< 20% synchronization)'},...
+            {'Katp '}, [savename 'Katp' Names{l}])
+    
     fig = fig +1;
     
     fig = fig +1;
-[h] = multiseedplotsave(fig,[Katp.hubs(l).data;Katp.hubslow(l).data], ...
-        ['Average Coupling Conductance for cells sorted by links' Names{l}], ...
-        {'Hubs (>60% synchronization)', 'Low Links (< 20% synchronization)'},...
-        {'gCoup [pS]'}, [savename '_Gcouphubs' Names{l}])
+    [h] = multiseedplotsave(fig,[Katp.hubs(l).data;Katp.hubslow(l).data], ...
+            ['Average Coupling Conductance for cells sorted by links' Names{l}], ...
+            {'Hubs (>60% synchronization)', 'Low Links (< 20% synchronization)'},...
+            {'gCoup [pS]'}, [savename '_Gcouphubs' Names{l}])
     fig = fig +1;
-figure(fig)
-%     if length(dataset2) >1
-%     subplot(Opts.subplotdim+l)
-%     end
+
+
     [h] = multiseedplotsave(fig,[Kglyc.hubs(l).data; Kglyc.hubslow(l).data],...
         ['Average Kglyc for cells sorted by links' Names{l}], {'Hubs (>60% synchronization)',  'Low Links (< 20% synchronization)'},...
         'Kglyc', [savename '_Kglychubs' Names{l}]);
         fig = fig +1;
-figure(fig)
-    [h] = multiseedplotsave(fig,[Kglyc.high(l).data; Kglyc.rand(l).data; Kglyc.low(l).data],...
+
+   [h] = multiseedplotsave(fig,[Kglyc.high(l).data; Kglyc.rand(l).data; Kglyc.low(l).data],...
         ['Average Kglyc for cells sorted by links' Names{l}], {'Highest 10% Links', 'Rand 10% Links', 'Lowest 10% Links'},...
         'Kglyc', [savename '_Kglyc' Names{l}]);
-%     set(gca,'XTickLabel',{'Hubs (>60% synchronization)', 'Mid Links (20% - 60%)', 'Low Links (< 20% synchronization)'});
-%     title({'Average Kglyc for cells sorted by links' '(Islet Size = ' num2str(cellnum) 'cells)'})
-%     ylabel({'Kglyc'})
+
     end
     clear N cell
-%     xlab = {'Highest 10% Links', 'Rand 10% Links', 'Lowest 10% Links'}
 end
 
-% 
-% hubby = Hubs(l).hubby(i).data;
-% lowwi = Hubs(l).hublow(i).data;
-% % lowwi = Links2.low(l).data(:,i);
-% calcium = ca(l).data(:,:,i);
-% time = [1:length(calcium)]*100/1000;
-% callow = [mean(calcium(:,lowwi(1:length(lowwi)/4)),2),...
-%     mean(calcium(:,lowwi(length(lowwi)/4:2*length(lowwi)/4)),2),...
-%     mean(calcium(:,lowwi(2*length(lowwi)/4:3*length(lowwi)/4)),2),...
-%     mean(calcium(:,lowwi(3*length(lowwi)/4:end)),2)];
-% % calrand = [mean(calcium(:,randii(1:length(randii)/2)),2), mean(calcium(:,randii(length(randii)/2+1:end)),2)]
-% calhub = [mean(calcium(:,hubby(1:length(hubby)/2)),2), mean(calcium(:,hubby(length(hubby)/2+1:end)),2)]
-% data = array2table([time', calhub,callow], 'VariableNames', {'Time','Hub1','Hub2','Low1','Low22','Low3','Low4'})
-% writetable(data, [pwd '\' savename '_' savetime '.xlsx'])
-% figure
-% plot(time, mean(calhub,2), 'Color', [0.6350, 0.0780, 0.1840], 'LineWidth',2)
-% hold on,plot(time, callow,'Color', [.175 .54 .60])
-% ylabel('Calcium [\muM]')
-% title('Calcium Dynamics')
-% xlabel('Time (seconds)')
-% legend('Hub Cell', 'Non-hub cell')
-% 
-% saveas(gcf, [pwd '\' savename '_' savetime '.fig'])
-% saveas(gcf, [pwd '\' savename '_' savetime '.png'])
 
-% %% Duty Cycle for hubs
-% for l = 1:Isizes
-%     for i = 1:seeds
-%         [cellnum] = length(Rvars(l).data(:,10));
-%         threshholdDC = 3.4759e-04
-%         [dutycycle_WT(l).data(:,i), amt_on(l).data(:,i)] = getDC(ca(l).data(:,:,i), threshholdDC);
-%         %amt_on(l).data = normalize(amt_on(l).data)
-%         Active.high(l).data(:,i) = mean(amt_on(l).data(Links2.high(l).data,i));
-%         Active.rand(l).data(:,i) = mean(amt_on(l).data(Links2.rand(l).data,i));
-%         Active.low(l).data(:,i) = mean(amt_on(l).data(Links2.low(l).data,i));
-%         
-%         totamtactive(l,i) = mean(amt_on(l).data(:,i));
-%     end
-% end
-% 
-% 
-% fig = fig+1
-% 
-% if length(dataset2) == 2
-% figure(fig)
-% h = multiseedplot2(fig,totamtactive);
-% set(gca,'XTickLabel',Names);
-% title({'Amount of time active' 'Threshold = ' threshholdDC})
-% ylabel({'Amount Active'})
-% elseif length(dataset2)
-% figure(fig)
-% h = multiseedplot6(fig,totamtactive);
-% set(gca,'XTickLabel',Names);
-% title({'Amount of time active' 'Threshold = ' threshholdDC})
-% ylabel({'Amount Active'})
-% end
 %% Probability that a cell is linked given functional connection
 clear t counter
 for i = 1:Isizes
    for l = 1:seeds
        tic
-%  for i = 4
-%      for l = 2
-% hubby = Hubs(i).hubby(l).data;
+
 posit = pos(i).data(:,:,l);
 if length(Threshold) == 1
         gjconn = conn(i).data(:,:,l);
@@ -383,7 +274,7 @@ end
   %Convert gjconn to look like adj
   gj2adj = zeros(size(adj));
 t = 1;
-if 1 %Create a network of gap junction connected cells
+if gjconnectionprob ==1 %Create a network of gap junction connected cells
     for c = 1:size(gjconn,1)
         for n=1:size(gjconn,2)
 %             disp([c n])
@@ -406,7 +297,8 @@ dist = sqrt((posit(:,1)-posit(:,1)').^2+(posit(:,2)-posit(:,2)').^2+...
 dist(dist==0)=100;
 end
 target = mean2(Rvars(i).data(:,10,l)) +1*std(Rvars(i).data(:,10,l))
-if 0 %Create a network of kglyc cells > some value
+
+if gjconnectionprob == 0 %Create a network of kglyc cells > some value
     disty = []
 
     for c = 1:1000
@@ -458,27 +350,7 @@ end
     end
     
     numcells = length(adj)
-%     for tgl = 1:numcells
-%     GJed =  find((gj2adj(tgl,:)));
-%     SYNCed = find(adj(tgl,:));
-%     gjNOsync = setdiff(GJed,SYNCed);
-%     syncNOgj = setdiff(SYNCed,GJed);
-%     syncANDgj = intersect(SYNCed,GJed);
-% 
-%     for jj = 1:length(gjNOsync)
-%     Shortestpath_gjNOsync(jj,tgl) = dd(tgl,gjNOsync(jj));
-%     end
-%     for jj = 1:length(SYNCed)
-%     Shortestpath_sync(jj,tgl) = dd(tgl,SYNCed(jj));
-%     end
-%     for jj = 1:length(syncNOgj)
-%     Shortestpath_syncNOgj(jj,tgl) = dd(tgl,syncNOgj(jj));
-%     end
-%      for jj = 1:length(syncANDgj)
-%     Shortestpath_syncANDgj(jj,tgl) = dd(tgl,syncANDgj(jj));
-%     end
-%     end
-%     
+     
     x=[];
 y=[];
 if 0
@@ -576,43 +448,6 @@ end
     end
 end
 
-%% Location of hubs
-% icenter = [0.5, 0.5 0.5];
-% for l = 1:Isizes
-%     for i = 1:seeds
-%      [cellnum] = length(Rvars(l).data(:,10,i));
-%     distfromcoord = ((pos(l).data(:,:,i)-icenter));
-%     distfromcent(l).data(:,i) = (distfromcoord(:,1).^2+distfromcoord(:,2).^2+distfromcoord(:,3).^2).^(1/2)
-%     
-% %     disted = ((pos(l).data-[1,1,1]));
-% %     distfromedge(l).data = (disted(:,1).^2+disted(:,2).^2+disted(:,3).^2).^(1/2)
-% %     
-%     dist.high(l).data(:,i) = mean(distfromcent(l).data(Links2.high(l).data,i));
-%     dist.rand(l).data(:,i) = mean(distfromcent(l).data(Links2.rand(l).data,i));
-%     dist.low(l).data(:,i) = mean(distfromcent(l).data(Links2.low(l).data,i));
-% % 
-% %     diste.high(l).data = mean(distfromedge(l).data(Links2.high(l).data));
-% %     diste.rand(l).data = mean(distfromedge(l).data(Links2.rand(l).data));
-% %     diste.low(l).data = mean(distfromedge(l).data(Links2.low(l).data));
-%     end
-%     fig7 = figure(7)
-%     fig7.Position = [325 32 1132 892.5000];
-%     subplot(Opts.subplotdim+l)
-%     [h] = multiseedplot(7,[(dist.high(l).data); dist.rand(l).data; (dist.low(l).data)])
-% 
-%     set(gca,'XTickLabel',{'High Links', 'Rand Links', 'Low Links'});
-%     title({'Average distance from center sorted by links' '(Islet Size = ' num2str(cellnum) 'cells)'})
-%     ylabel({'Distance from center'})
-%     
-%     fig8 = figure(8)
-%     fig8.Position = [325 32 1132 892.5000];
-%     subplot(Opts.subplotdim+l)
-%     bar([mean(diste.high(l).data), mean(diste.rand(l).data), mean(diste.low(l).data)]);
-%     set(gca,'XTickLabel',{'High Links', 'Rand Links', 'Low Links'});
-%     title({'Average distance from edge sorted by links' '(Islet Size = ' num2str(cellnum) 'cells)'})
-%     ylabel({'Distance from edge'})
-%end
-
 
 %% Extra interesting - see how this changes with thresholds
 if Opts.figs
@@ -638,16 +473,6 @@ set(gca,'XTickLabel',Names);
 title('Max connections')
 ylabel('Highest amount of connections in Islet')
 end
-%% Too dependent on size
-% figure(10)
-% KG_table_all = [mean(Links2.N(1).data)/50;mean(Links2.N(2).data)/100;mean(Links2.N(3).data)/300;...
-%     mean(Links2.N(4).data)/1000;mean(Links2.N(5).data)/2000;mean(Links2.N(6).data)/3000];
-% [h] = multiseedplot6(10,KG_table_all)
-% set(gca,'XTickLabel',dataset2);
-% title({'Average cell percent of connectivity'})
-% ylabel({'Average number of links/total number of cells in Islet'})
-% hold on, plot(mean(KG_table_all'))
-
 %% Consider a hub a cell with 
 
 for i = 1:Isizes
@@ -742,33 +567,6 @@ end
 end
 end
 %% 
-if freqcalc == 1
-for l = 1:5
-       ca_freq = ca(1).data(2000:end, :,l);
-       max_ca = max(ca_freq);
-       bina = ca_freq./max_ca;
-       bina_ac  = bina > .70;
-       bina_fre = bina > .6;
-       bina_in = bina < .4;       
-       changeca = logical(diff(bina_fre));  
-
-       for i = 1:cellnum
-           freq(i) = nnz(changeca(:,i));
-       end
-       freq = mean(freq./2);
-
-       %freq1000 = 1000*freq./size(ca_freq,1);
-       period = size(ca_freq,1)./freq;
-       periodsec(l) = period*100/1000;
-end
-if Opts.figs
-fig = fig+1;
-figure(fig), bar(periodsec)
-title('Period of Oscillations')
-xlabel('Seeds')
-ylabel('Period (s)')
-end
-end
 %% 
 % fig = fig+1
 % figure(fig)
