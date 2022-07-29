@@ -4,11 +4,17 @@
 
 ## ---- Options for you to change -------
 # set to true if you'd like to see and save figures. set to false if you don't need figures
-fig_on = False
+fig_on = True
 
 # if you want to predefine a savepath. If not, comment out this line by putting at # in front!
 savepath = '/Users/briggjen/Documents/GitHub/Functional_and_Structural_Networks'
-thr = 0.99
+
+# How do you want to define the threshold? 
+#threshold_opts = 'number_of_connections'
+#k = 10
+threshold_opts = 'scalefreeish'
+min_connect = 5
+max_connect = 20
 
 
 # %% Import packages
@@ -20,6 +26,9 @@ import scipy.optimize as op
 import easygui #for selecting files using gui
 import pandas as pd
 import math
+import tkinter as tk
+from tkinter import ttk
+from tkinter.messagebox import askyesno
 
 
 # %% Functions and Classes
@@ -58,14 +67,30 @@ def lookatnetwork(G):
 
     plt.savefig(savepath + 'NetworkStats.png')
     plt.clf
-    
+
+
+def makegraph(thr):
+    #Finding optimal threshold based on log log fit
+    G = nx.Graph() #make an empty graph
+    G.add_nodes_from(list(cor_mat)) #add node for each cell
+    #loop over every combination of nodes and add an edge if the correlation is greater than threhsold 
+    for x in G.nodes:
+        xint = int(x)
+        for y in range(xint+1, len(G.nodes)-1): 
+            if cor_mat.iloc[xint,y] > thr:
+                G.add_edge(x,str(y))
+
+    return G
+
+
+## To compute thresholds 
 def loglogcost(x, y):
     # remove any zeros - THIS STEPS ASSUMES THE ONLY THE CONNECTED NODES FIT A POWER LAW
     slope, intercept, r, p, std_err = stats.linregress(np.log10(x), np.log10(y))
     err = (r + 1) #r should be -1 so error is r - (-1)
     return err
 
-def makegraph(thr):
+def makegraph_err(thr):
     #Finding optimal threshold based on log log fit
     G = nx.Graph() #make an empty graph
     G.add_nodes_from(list(cor_mat)) #add node for each cell
@@ -89,7 +114,25 @@ def makegraph(thr):
 
     err = loglogcost(deg_hist_bins[1:],deg_hist_vals)
 
-    return err
+    return err 
+
+
+def thr_based_on_degree(cor_mat, k):
+    #This function finds the threshold for a corrlation matrix (cor_mat) that gives the network a desired average degree k. 
+    #k = desired average degree
+    #m = k*n/2 : where m is the total number of edges and n is the total number of nodes
+    #p = 2m/(n(n-1)): the percent of edges we want compared to the number of possible edges
+    #Once p is found, we sort all non-self correlations and find the threshold which returns p percent. 
+
+    p = k/(len(cor_mat)-1)
+    all_cors = np.reshape(list(cor_mat.values), (1,-1)) #1d list of all correlations
+    all_cors_sort = sorted(all_cors)
+    last_val = p*len(cor_mat) #value to pick for threshold
+    thr = all_cors_sort[0][-round(last_val)]
+
+    return thr
+    
+
 
 
 # %%  Load calcium file
@@ -121,9 +164,61 @@ if fig_on:
     plt.savefig(savepath + 'Corrmat.png')
     plt.clf
 
+# set diagonals equal to zero:
+cor_mat = cor_mat.where(cor_mat.values != np.diag(cor_mat),0,cor_mat.where(cor_mat.values != np.flipud(cor_mat).diagonal(0),0,inplace=True))
+
 # %% Computing the network -- need to code in how to find the threshold (8 or power law)
 
-scipy.optimize.minimize(makegraph, 0.9, method = 'Nelder-Mead', bounds = (5, 15) )
+#If how to set threshold is not predefined, choose how to set through gui 
+if 'threshold_opts' not in locals():
+    root = tk.Tk()
+
+    # click event handler
+    def b_degree():
+        threshold_opts = 'number_of_connections'
+        min_connect = 5
+        max_connect = 20
+
+        print('done')
+        root.destroy()
+        return threshold_opts
+    
+    def b_scalefree():
+        threshold_opts = 'scalefreeish'
+        print('done')
+        root.destroy()
+        return threshold_opts
+
+
+    top = ttk.Frame(root)
+    bottom = ttk.Frame(root)
+
+    top.pack(side=tk.TOP)
+    bottom.pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True)
+
+    # create the widgets for the top part of the GUI,
+    # and lay them out
+    b = ttk.Button(root, text="Predefined average degre", command=b_degree)
+    c = ttk.Button(root, text="Scale Free (ish)",  command=b_scalefree)
+    b.pack(in_=top, side=tk.LEFT)
+    c.pack(in_=top, side=tk.LEFT)
+
+    # start the app
+    root.mainloop()
+
+
+# %%
+if threshold_opts == 'number_of_connections':
+    # Speficy average number of connections:
+    thr = thr_based_on_degree(cor_mat, k)
+elif 'scalefreeish':
+    maxbnds = float(thr_based_on_degree(cor_mat, min_connect)) #because the minimum connection gives the largest threshold
+    minbnds = float(thr_based_on_degree(cor_mat, max_connect))
+
+    thr = op.minimize(makegraph_err, 0.9, method = 'Nelder-Mead', bounds = [minbnds, maxbnds])
+
+
+G = makegraph(thr)
 
 
 if fig_on: 
@@ -137,3 +232,5 @@ if fig_on:
 # av_degree = 2*G.number_of_edges()/G.number_of_nodes() #average degree is 2m/n
 
 # # %%
+
+# %%
