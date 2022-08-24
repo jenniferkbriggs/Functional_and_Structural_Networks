@@ -1,35 +1,12 @@
+#Extract_Functional_Net.py>
 # %% 
-# This code is made to extract the functional network from Calcium timecourses. 
+# This code contains functions to run Run_Network.py 
 # Jennifer Briggs 2022
-
-## ---- Options for you to change -------
-# set to true if you'd like to see and save figures. set to false if you don't need figures
-fig_on = True
-
-# if you want to predefine a savepath. If not, comment out this line by putting at # in front!
-savepath = '/Users/briggjen/Documents/GitHub/Functional_and_Structural_Networks'
-
-# How do you want to define the threshold? 
-#threshold_opts = 'number_of_connections'
-#k = 10
-threshold_opts = 'scalefreeish'
-min_connect = 5
-max_connect = 20
-
-
-# %% Import packages
 import networkx as nx
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy import stats
 import scipy.optimize as op
-import easygui #for selecting files using gui
-import pandas as pd
-import math
-import tkinter as tk
-from tkinter import ttk
-from tkinter.messagebox import askyesno
-
 
 # %% Functions and Classes
 def lookatnetwork(G):
@@ -132,105 +109,5 @@ def thr_based_on_degree(cor_mat, k):
 
     return thr
     
-
-
-
-# %%  Load calcium file
-try: # you can directly add the path to your data here
-    ca = pd.read_csv('/Users/briggjen/Library/CloudStorage/OneDrive-TheUniversityofColoradoDenver/Anschutz/Islet/TempData/Erli_calcium.csv')
-except: #if there is no path, it will ask you to select the folder
-    path = easygui.fileopenbox()
-    ca = pd.read_csv(path)
-
-try: #if time is in the first axis, we save it and remove
-    time = ca.Time
-    ca = ca.drop('Time', axis=1)
-except:
-    print('No time avaliable')
-    timeopt = "No"
-
-# %% Compute the correlation matrix
-global cor_mat
-
-cor_mat = ca.corr() #computes correlation matrix
-if fig_on:
-    f = plt.figure(figsize=(19, 15))
-    plt.matshow(cor_mat, fignum=f.number)
-    cb = plt.colorbar()
-    cb.ax.tick_params(labelsize=14)
-    plt.title('Correlation Matrix', fontsize=16)
-    if 'savepath' not in locals():
-        savepath = easygui.fileopenbox()
-    plt.savefig(savepath + 'Corrmat.png')
-    plt.clf
-
-# set diagonals equal to zero:
-cor_mat = cor_mat.where(cor_mat.values != np.diag(cor_mat),0,cor_mat.where(cor_mat.values != np.flipud(cor_mat).diagonal(0),0,inplace=True))
-
-# %% Computing the network -- need to code in how to find the threshold (8 or power law)
-
-#If how to set threshold is not predefined, choose how to set through gui 
-if 'threshold_opts' not in locals():
-    root = tk.Tk()
-
-    # click event handler
-    def b_degree():
-        threshold_opts = 'number_of_connections'
-        min_connect = 5
-        max_connect = 20
-
-        print('done')
-        root.destroy()
-        return threshold_opts
-    
-    def b_scalefree():
-        threshold_opts = 'scalefreeish'
-        print('done')
-        root.destroy()
-        return threshold_opts
-
-
-    top = ttk.Frame(root)
-    bottom = ttk.Frame(root)
-
-    top.pack(side=tk.TOP)
-    bottom.pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True)
-
-    # create the widgets for the top part of the GUI,
-    # and lay them out
-    b = ttk.Button(root, text="Predefined average degre", command=b_degree)
-    c = ttk.Button(root, text="Scale Free (ish)",  command=b_scalefree)
-    b.pack(in_=top, side=tk.LEFT)
-    c.pack(in_=top, side=tk.LEFT)
-
-    # start the app
-    root.mainloop()
-
-
-# %%
-if threshold_opts == 'number_of_connections':
-    # Speficy average number of connections:
-    thr = thr_based_on_degree(cor_mat, k)
-elif 'scalefreeish':
-    maxbnds = float(thr_based_on_degree(cor_mat, min_connect)) #because the minimum connection gives the largest threshold
-    minbnds = float(thr_based_on_degree(cor_mat, max_connect))
-
-    thr = op.minimize(makegraph_err, 0.9, method = 'Nelder-Mead', bounds = [minbnds, maxbnds])
-
-
-G = makegraph(thr)
-
-
-if fig_on: 
-    from pyvis.network import Network
-    net = Network(notebook = True)
-    net.from_nx(G)
-    net.show(savepath + "network.html")
-    deg_seq = lookatnetwork(G)
-
-# # %%
-# av_degree = 2*G.number_of_edges()/G.number_of_nodes() #average degree is 2m/n
-
-# # %%
 
 # %%
