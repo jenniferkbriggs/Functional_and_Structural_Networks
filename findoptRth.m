@@ -1,27 +1,93 @@
-function [Thr] = findoptRth(calcium)
+function [Thr] = findoptRth(calcium, Opts)
 %This code allows you to find the optimal threshold for a network that both
 %optimized fit to a scalefree graph and constraints for the average number of
 %connections per islet
+%Input: calcium
+%Opts: Method - either 'Scale-Free' or 'Degree'
+%       if Scale-Free you also need Max and Min which correspond to max and
+%       min average degree
+%       if Degree you also need avDeg which the average degree of the islet
+
+
+%Output: Threshold
 % Jennifer Briggs, 2021
 
-upper = 8 %set average number of connections
+%check calcium direction
+try
+direction_hold = Opts.direction_hold;
+if direction_hold ==0
+  if size(calcium,1)<size(calcium,2)
+     calcium = calcium';
+  end
+end
+catch
+  if size(calcium,1)<size(calcium,2)
+     calcium = calcium';
+  end
+end
 
-addpath('C:\Users\Jennifer Briggs\Documents\GitHub\UniversalCode_Briggs\UniversalCode\FMINSEARCHBND')
+calcium = rescale(calcium, 0, 1);
 [Rij, pval]=corr(calcium);
-
-fun = @(x)Lfunc(x,calcium,Rij); % Defines the cost function
-x0 = .90; %originial threshold
-numcells = size(calcium,2); 
 Rij = Rij-diag(diag(Rij)); %removes ones on diagonal
-Rijs = sort(Rij);
-av = mean(Rijs(end-upper-1:end,:)); %calculates the average correlation coeffiecient for top 9 highest correlated cell pairs [9 x numcells]
-avs = sort(av); %Gives average correlation for top 9 highest correlated cellpairs
-ub = mean(avs(end-upper-1:end)); %Upper bound is set to be the average correlation for the top 9
+done = 0; %if the computer can't find a threshold with standard floating point, we increase the variable precision
+increaseprecision = 0;
 
-%run optimization: fminsearchbnd can be downloaded here https://www.mathworks.com/matlabcentral/fileexchange/8277-fminsearchbnd-fminsearchcon
-Thr = fminsearchbnd(fun,x0, [.6], ub); %Find threshold that most fits power law while staying within upper and lower bounds
+while done == 0
+    if increaseprecision == 1
+        Rij = vpa(Rij);
+    end
+        
+switch Opts.Method  
+    case 'Scale-Free'
+        try 
+            upper = Opts.Max;
+        catch
+            upper = 8 %set average number of connections for the top "upper" cells
+        end
 
 
+        fun = @(x)Lfunc(x,calcium,Rij); % Defines the cost function
+        numcells = size(calcium,2); 
+        Rijs = sort(Rij);
+        av = mean(Rijs(end-upper-1:end,:)); %calculates the average correlation coeffiecient for top "upper" highest correlated cell pairs [9 x numcells]
+        avs = sort(av); %Gives average correlation for top 9 highest correlated cellpairs
+        ub = mean(avs(end-upper-1:end)); %Upper bound is set to be the average correlation for the top "upper"
+        lb = mean(avs(1:2:end))
+        x0 =  mean(avs(end-round(numcells/3):end)); %originial threshold
+
+
+        %run optimization: fminsearchbnd can be downloaded here https://www.mathworks.com/matlabcentral/fileexchange/8277-fminsearchbnd-fminsearchcon
+        try
+        Thr = fminsearchbnd(fun,x0, lb, ub); %Find threshold that most fits power law while staying within upper and lower bounds
+        catch
+            disp('Threshold could not be found')
+            Thr = mean([ub, x0]);
+        end
+    case 'Degree'
+%     This function finds the threshold for a corrlation matrix (cor_mat) that gives the network a desired average degree k.
+%     k = desired average degree
+%     m = k*n/2 : where m is the total number of edges and n is the total number of nodes
+%     p = 2m/(n(n-1)): the percent of edges we want compared to the number of possible edges
+%     Once p is found, we sort all non-self correlations and find the threshold which returns p percent.
+        k = Opts.avDeg;
+        Rij = Rij - diag(diag(Rij)); %set diagonals to zeros
+        all_cors = reshape(Rij, 1, []); % Make 1d list of all correlations
+        all_cors_sort = sort(all_cors, 'descend');
+        m = (k*length(Rij)); %desired number of edges
+        if increaseprecision
+            Thr = vpa(all_cors_sort(ceil(m)));
+        else
+            Thr =  (all_cors_sort(ceil(m)));
+        end
+end
+
+if mean(nonzeros(Rij)) > 0.999
+    increaseprecision = 1
+    done = 0
+else
+    done = 1
+end
+end
 end
 
 
@@ -36,7 +102,7 @@ Adj(Adj >= Threshold) = 1;
 Adj(Adj < Threshold) = 0;
 % 
  Adj = Adj - diag(diag(Adj));        
- if mean(sum(Adj)) > 5
+ if mean(nonzeros(sum(Adj))) > 5 %here is where the lower bound is set!
 %% 4. Determine number of "links" based on cov threshold
 for i=1:numcells
     N (i,1) = nnz(Adj(:,i));  % N is matrix containing # of links for each cell (nnz returns number of nonzero elements)

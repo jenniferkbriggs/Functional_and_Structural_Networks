@@ -16,19 +16,15 @@ addpath('~/Documents/GitHub/Network-Analysis/');
 savetime =  datestr(datetime('today'),'yyyymmdd');
 
 %%Things you set!
-dataset2 = {'FullCoup/300cell/'}
+dataset2 = {'FullCoup/1000cell'}
 dataname = {'/seed1/', '/seed2/','/seed3/','/seed4/','/seed5/'}
-datapath = '/Volumes/Briggs_10TB/NetworkPaper'
+datapath = '/Volumes/Briggs_10TB/SizeDependence'
 slash = '/';
 cellperc = .1; %percentage of cells to look at
-%Names = {'gCoup = .12 pS' ,'gCoup = .06 pS', 'gCoup = .03 pS'};
+Names = {'gCoup = .12 pS' ,'gCoup = .06 pS', 'gCoup = .03 pS'};
+Threshold = .9995; %Set R_th for network analysis
 
-%You can either set the threshold or automatically choose a threshold based
-%on degree distribution or average degree
-Manual_Th = 0 %set to 1 if you want to choose a threshold
-Threshold = .9995; %Set R_th for network analysis - now set that threshold
-
-savename = ['2nd_Phase300Cell' savetime]; 
+savename = ['2nd_PhaseXcor' savetime]; 
 
 gjconnectionprob = 1 %define whether network to compare to functional network is gj connections or metabolism
 %%% 
@@ -99,7 +95,7 @@ toc
 
 clear casize sizes sizemin seed min tt
 
-%fig1.Position = [325 32 1132 892.5000];
+fig1.Position = [325 32 1132 892.5000];
 % 
 %% Run Network Analysis
 Links2 = struct;
@@ -111,14 +107,7 @@ for l = 1:length(dataset2)
     for i = 1:length(dataname)
         
      Opts.printasSubplot = 1;  Opts.Subplotnum = l; Opts.multiseednum = i; %define options
-         
-     if Manual_Th == 0 %if the threshold is not set, we automatically define one
-         Opts.avDeg = 3
-         Opts.Min = 0
-         Opts.Method = 'Degree'
-         Threshold = double(findoptRth(ca(l).data(:,:,i), Opts));
-     end
-
+     
      %run links analysis
     [Links2.N(l).data(:,i), adjm(l).data(:,:,i), kperc(l).Islet(i).data , histArrayPercShort(i).data, Rij(l).Islet(i).data(:,:) ] = links(ca(l).data(:,:,i), Threshold,Opts,fig); %%This is where network analysis is perfromed
 
@@ -168,7 +157,7 @@ for l = 1:length(dataset2)
    
 	hublow = find(connect<=hubthreshold);
     Hubs(l).hublow(i).data = hublow%find(connect<b(end));%Number of cells linked to more than 50% of Islet
-    hubmid = [1:size(calcium,2)];%Number of cells linked to more than 50% of Islet
+    hubmid = [1:1000];%Number of cells linked to more than 50% of Islet
     hubmid(hublow) = [];
     for iii = 1:length(hubby)
     hubmid(find(hubmid == hubby(iii))) = [];
@@ -186,20 +175,12 @@ for l = 1:length(dataset2)
     
     
     TotConn.hubs(l).data(:,i) =mean(Conny(hubby));
+%     Kglyc.hubsmid(l).data(:,i) = mean(Kglyc.kglyc(l).data(hubmid,i));
     TotConn.hubslow(l).data(:,i) = mean(Conny(hublow));
     
 
-    Katp.hubs(l).data(:,i) = mean(conn.data(hubby,1,i));
-    Katp.hubslow(l).data(:,i) = mean(conn.data(hublow,1,i));
-    
-    
-    % katp --- high low 
-
-    % Kglyc.high(l).data(:,i) = mean(Kglyc.kglyc(l).data(Links2.high(l).data,i));
-    % Kglyc.rand(l).data(:,i) = mean(Kglyc.kglyc(l).data(Links2.rand(l).data,i));
-    % Kglyc.low(l).data(:,i) = mean(Kglyc.kglyc(l).data(Links2.low(l).data,i));
-    % 
-
+    Katp.hubs(l).data(:,i) = mean(Conny(hubby));
+    Katp.hubslow(l).data(:,i) = mean(Conny(hublow));
 
     Kglyc.high(l).data(:,i) = mean(Kglyc.kglyc(l).data(Links2.high(l).data,i));
     Kglyc.rand(l).data(:,i) = mean(Kglyc.kglyc(l).data(Links2.rand(l).data,i));
@@ -219,13 +200,12 @@ for l = 1:length(dataset2)
             conduct(tt) = Rvars(l).data(connections(tt),2,i);
         end          
         GJconduct(i).data(t) = sum(0.5*(conduct + Rvars(l).data(t,2,i)));
-        clear conduct
+         clear conduct
     end
      
     Gcoup.hubs(l).data(:,i) = mean(GJconduct(i).data(hubby));
+%     Gcoup.hubsmid(l).data(:,i) = mean(Rvars(l).data(hubmid,2,i));
     Gcoup.hubslow(l).data(:,i) = mean(GJconduct(i).data(hublow));
-
-    %Gcoup.hubs_all(l).data(1:length(GJconduct(i).data(hubby)))
 
     Gcoup.high(l).data(:,i) = mean(Rvars(l).data(Links2.high(l).data,2,i));
     Gcoup.rand(l).data(:,i) = mean(Rvars(l).data(Links2.rand(l).data,2,i));
@@ -272,17 +252,6 @@ for l = 1:length(dataset2)
     clear N cell
 end
 
- for i = 1:5
-[~,sorted] = sort(Links2.N.data(:,i));
-Gcoup.top10(i) = mean(GJconduct(i).data(sorted(end-99:end)))
-Gcoup.bottom90(i) = mean(GJconduct(i).data(sorted(1:end-99)))
-kglycdata = Rvars.data(:,10,i);
-katpdata = Rvars.data(:,1,i);
-Kglyc.top10(i) = mean(kglycdata(sorted(end-99:end)));
-Kglyc.bottom90(i) = mean(kglycdata(sorted(1:end-99)));
-Katp.top10(i) = mean(katpdata(sorted(end-99:end)));
-Katp.bottom90(i) = mean(katpdata(sorted(1:end-99)));
-end
 
 %% Probability that a cell is linked given functional connection
 clear t counter
@@ -371,7 +340,7 @@ end
     %gjconduct = Rvars(i).data(:,2,l); %Weight by Metabolism
     gjconduct = Rvars(i).data(:,10,l);  %Weight by GJ
     [distweighted(:,:,l), adjw] = weightednet(gj2adj, gjconduct,0); %outputs graph weighted by inverse of conductance
-    [Length, syncD_all, nonsyncD_all] = WeightedDistEqualbasedonCell(adj,adjw,string(l)); %calculates the weight and distance for syncrhonized and non syncrhonized cells
+    [Length, syncD_all,nonsyncD_all] = WeightedDistEqualbasedonCell(adj,adjw,l); %calculates the weight and distance
 
     [col,row] = find(adj); %finding edges
     dd = distweighted(:,:,l);

@@ -29,6 +29,22 @@ if figs == 1
         Opts.printasSubplot = 0;
     end
 end
+
+%check calcium direction
+try
+direction_hold = Opts.direction_hold;
+if direction_hold ==0
+  if size(calciumT,1)<size(calciumT,2)
+     calciumT = calciumT';
+  end
+end
+catch
+  if size(calciumT,1)<size(calciumT,2)
+     calciumT = calciumT';
+  end
+end
+
+
 [data numcells]=size(calciumT);                                     
 
 time = [1: size(calciumT,1)];
@@ -39,39 +55,31 @@ time = [1: size(calciumT,1)];
     
     
     if figs
-    figure(fig)
-    fig = fig+1;
+    figure;
     imagesc(Rij);
     title('Pearson product moment, norm for timelength, RijN')
-    colorbar
-    figure
-    imagesc(pval);
-    title('Statistical Significance')
     colorbar
     end
 
 
 
 %% 3. Making a link map
-%disp(mean2(Rij))
 Adj = Rij;
 Adj(Adj >= Threshold) = 1;
 Adj(Adj < Threshold) = 0;
 % 
  Adj = Adj - diag(diag(Adj));             % replacing diagonal elemants with 0s to account for self-correlation
-%disp(mean2(Adj))
-
+% disp(Threshold)
 if figs
-    figure(fig);
-    fig = fig+1;
+    figure
     imagesc(Adj);
-    title('Connection Map')
+    title('Edge Map')
     colorbar
 end
 
 %% 4. Determine number of "links" based on cov threshold
 for i=1:numcells
-    N (i,1) = nnz(Adj(:,i));  % N is matrix containing # of links for each cell (nnz returns number of nonzero elements)
+    N(i,1) = nnz(Adj(:,i));  % N is matrix containing # of links for each cell (nnz returns number of nonzero elements)
 end
 % 
 
@@ -101,19 +109,15 @@ loghist(isinf(loghist))=[];
 
 
 [s] = corrcoef(log(xlab),loghist);
+try
 s = s(2);
-%
-if figs
-    figure(fig)           % plot a bar graph of the probability of a cell to have k links
-    fig = fig+1;
-    bar(k,histArrayShort)
-    title('Probability to have k links,(%)')
-    xlabel('Number of links');
-    ylabel('Number of cells')
+catch
+    s = NaN;
 end
 
+
 if figs == 1
-    fig2 = figure(fig),hold on;
+    fig2 = figure,hold on;
     fig2.Position = [325 32 1132 892.5000];
     if Opts.printasSubplot == 1
         if Opts.multiseed == 1
@@ -138,11 +142,11 @@ if figs == 1
     %title(['Islet Size = ' num2str(numcells)])
     xlabel('Percent of links, (%)','FontSize', 15);
     ylabel('Pr(links)','FontSize', 15)
-    sgtitle(['Probability to have k links,(%)  ']) 
+   % sgtitle(['Probability to have k links,(%)  ']) 
 
 %% 6. Applying log function to probability and number of links
 % plotting on logarithmic scale
-    fig3 = figure(fig+1), hold on;
+    fig3 = figure, hold on;
     fig3.Position = [325 32 1132 892.5000];
 
     if Opts.printasSubplot == 1
@@ -171,7 +175,7 @@ coef1 = polyfit(xx,ll , 1);
 y1 = polyval(coef1, xx);
 hold on, plot(xx,y1)
 %title({'Probability on a log(10) scale' phase 'avg links = ' num2str(mean(k))});
-title(['Threshold = ' num2str(Threshold)],'FontSize', 15);
+%title(['Threshold = ' num2str(Threshold)],'FontSize', 15);
 %title(['Islet Size = ' num2str(numcells), 'Average Links = '])
 xlabel('Log(number of links, (%))','FontSize', 15);
 ylabel('Log(Pr(links))','FontSize', 15);

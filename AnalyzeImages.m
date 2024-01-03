@@ -1,11 +1,11 @@
-%function [T,Tpp,Tpm,Tmm,S2, S3, S4, S5, Lrand2, Erand2, Crand2, S_L2] = BarakNetworkAnalysis_checkanalyze(k)
+%function [T,Tpp,Tpm,Tmm,S2, S3, S4, S5, Lrand2, Erand2, Crand2, S_L2] = AnalyzeImages(k)
 %Ths code was used to analyze all run network analysis on imaging data
 %Jennifer Briggs, 2021
 
 clear all
 close all
 %clc
-load('/Volumes/Briggs_2TB/SizeDependence/Analysis/Images/VidInfo.mat');
+load('/Volumes/Briggs_10TB/SizeDependence/Analysis/Images/VidInfo.mat');
 
 %folderpaths = {'1_sec\', '6_sec\','10_sec\'}
 %folderpaths = {'6_sec\'}
@@ -16,8 +16,8 @@ addpath('~/Documents/GitHub/Simulations');
 addpath('~/Documents/GitHub/UniversalCode');
 savetime =  datestr(datetime('today'),'yyyymmdd');
 
-path = ['/Volumes/Briggs_2TB/SizeDependence/Analysis/Images/TrywFPS/'];
-savename = ['/Volumes/Briggs_2TB/SizeDependence/Analysis/Images/Network_SDfilter' savetime];
+path = ['/Volumes/Briggs_10TB/SizeDependence/Analysis/Images/TrywFPS/'];
+savename = ['/Volumes/Briggs_10TB/SizeDependence/Analysis/Images/Network_SDfilter' savetime];
 cti = 1;
 %Images = {'39', '41','20','23', '1', '7', '10', '19';
             %'35', '43','22','24', '4', '11','14','15'}
@@ -34,7 +34,7 @@ folders = dir([path '*']);
 j = 1;
 cnt = 1;
 
-if 0
+if 1
 for illy = 1:length(folders)
 
      Images = dir([path folders(illy).name '\*' '.lsm']);

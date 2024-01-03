@@ -1,7 +1,5 @@
 %% Show network dot stick
-close all 
-clear all
-clc
+function Show_network(adj, pos)
 
 addpath('C:\Users\Jennifer Briggs\Documents\GitHub\Simulations');
 addpath('C:\Users\Jennifer Briggs\Documents\GitHub\UniversalCode_Briggs\UniversalCode');

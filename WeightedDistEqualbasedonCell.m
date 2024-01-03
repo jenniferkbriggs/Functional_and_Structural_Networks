@@ -10,7 +10,7 @@ ct = 1
 AA = sparse(adjw);
 GJ = graph(AA, 'upper');
 
-for i = 1:numcells
+for i = 1:numcells %go through each cell and find it's pairs
     if mod(i,200) == 0
         disp(['Cell Number: ' num2str(i)])
     end
@@ -22,7 +22,7 @@ for i = 1:numcells
         [Sync(j).data,syncD(j)] = shortestpath(GJ, i, sync(j));
     end
 
-    nonsync = setdiff([1:numcells],sync);
+    nonsync = setdiff([1:numcells],sync); %find nonsynced pairs
     nonsync(find(nonsync == i))= [];
     for k = 1:length(nonsync)
     [path, d] = shortestpath(GJ, i, nonsync(k));
@@ -58,6 +58,8 @@ for i = 1:numcells
     % plot(i,mean(nonzeros(Z),'omitnan'), 'o')
     % drawnow
     clearvars Sync syncD path d Nonsync nonsyncD D
-    end
+end
+try
     save(tit, 'Length', 'syncD_all', 'nonsyncD_all', '-append')
+end
 end

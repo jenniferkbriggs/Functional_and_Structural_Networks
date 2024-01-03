@@ -11,9 +11,10 @@ function [dist,adjw] = weightednet(gj2adj, gjconduct,gjconn)
     end
     w2 = (gjconduct+gjconduct')/2;
     w = 1./w2;
-    adjw = gj2adj.*w;        
+    adjw = gj2adj.*w;    
+    adjw(isnan(adjw))=0;
     A = sparse(adjw);
-    dist = graphallshortestpaths(A, 'Directed', 'False');
+    dist = distances(graph(A, 'upper'));
     
     if gjconn == 1
        view(biograph(A,[],'ShowWeights','on'))
