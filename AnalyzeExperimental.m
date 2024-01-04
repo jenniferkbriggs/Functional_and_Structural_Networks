@@ -8,7 +8,7 @@ data = dir(filedir)
 ct = 1;
 
 % %first find optimal threshold
-for i = 12:20
+for i = 12:20 %indicies correspond to file indices to sort through
 
     CA = readmatrix([filedir data(i).name]);
     figure, plot(CA), title('Identify beginning of first response')

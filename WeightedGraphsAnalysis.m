@@ -1,5 +1,5 @@
-%This function was used to analyze the networks based on weight - given in
-%figure 4.
+%This script was used to analyze the networks based on weight - given in
+%figure 5.
 
 type = ''
 one = load([type 'ShortPathEqualDist.mat']);

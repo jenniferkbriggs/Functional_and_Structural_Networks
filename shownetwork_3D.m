@@ -1,10 +1,13 @@
 function out = shownetwork_3D(adj, pos, both, gj2adj, tit, savename,hubby)
-%function to view 3D network
+%function to view 3D network (e.g. Figure 4)
 %Jennifer Briggs 2020
 %Inputs:
-%adj = adjacency matrix
-%pos = 3D position matrix
-%both = graph types
+%adj -- adjacency matrix (square)
+%pos -- 3xCell Number XYZ position matrix
+%both -- graph types
+%Hubby -- indices corresponding to hubs
+%tit -- title of image (string)
+%savename -- name the image will be saved as
 savetime =  datestr(datetime('today'),'yyyymmdd');
 if 0
 

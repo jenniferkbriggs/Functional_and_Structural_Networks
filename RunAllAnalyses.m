@@ -1,5 +1,5 @@
 %This is the main script which loads all of the calcium data and runs
-%analyses used in Briggs et al., 2022
+%analyses used in Briggs et al., 2023
 % Jennifer Briggs, 2021
 
 clear all

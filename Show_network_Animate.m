@@ -1,4 +1,4 @@
-%% Show network dot stick
+%% This script shows the network as it changes over time. This scirpt was not used in the paper
 close all 
 clear all
 clc

@@ -1,4 +1,9 @@
 %% Show network dot stick
+
+%% This script shows the network on top of an islet image (e.g. Figure 6). 
+
+%Jennifer Briggs 2020
+
 close all 
 clear all
 clc

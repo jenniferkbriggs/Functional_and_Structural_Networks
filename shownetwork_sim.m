@@ -1,4 +1,10 @@
 function out = shownetwork_sim(adj, pos, Hubby, tit, savename)
+    %This function was used to create images of the various networks (e.g. figure 5a)
+    %adj -- adjacency matrix (square)
+    %pos -- 3xCell Number XYZ position matrix
+    %Hubby -- indices corresponding to hubs
+    %tit -- title of image (string)
+    %savename -- name the image should be saved as 
 savetime =  datestr(datetime('today'),'yyyymmdd');
 AdjacencyGraph = sparse(adj);
 %AdjacencyGraph = graph(A);
