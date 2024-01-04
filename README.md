@@ -5,7 +5,7 @@ Managed by Jennifer Briggs 2022.
 
 ## Folder 2022Islet
 
-This is all the code used in the paper: "What do Functional Synchronization Networks Indicate About Underlying Structure and System Dynamics? A network theory study of the islet." by Briggs et al.
+This is all the code used in the paper: "β-Cell intrinsic dynamics rather than gap junction structure dictates subpopulations in the islet functional network." by Briggs et al eLife 2023.
 
 
 To run 'basic network analysis: (plot histogram and adjacency matrix)
