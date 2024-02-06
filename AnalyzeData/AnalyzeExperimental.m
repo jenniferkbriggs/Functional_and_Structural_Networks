@@ -2,32 +2,34 @@
 % This code is written to analyze networks for experimental data from Anne
 % and Vira. Files are calcium data.
 
+%In this script, we load and analyze all of the imaging files for a single analysis 
+addpath('AnalyzeData/')
 
-filedir = '/Volumes/Briggs_10TB/NetworkPaper/Experimental_Data/Slow_oscillations/'
-data = dir(filedir)
+cd('ExampleData/experimental/'); %directory of your files
+files = dir('*.csv'); %list all files in directory
 ct = 1;
 
-% %first find optimal threshold
-for i = 12:20 %indicies correspond to file indices to sort through
-
-    CA = readmatrix([filedir data(i).name]);
-    figure, plot(CA), title('Identify beginning of first response')
-   [st(ct), ~] = ginput(1)
+%%first find optimal threshold defined as the average optimal threshold for
+%%all imaging files
+for i = 1:length(files) %indicies correspond to file indices to sort through
+    CA = readmatrix([filedir files(i).name]);
+    figure, plot(CA), title('Identify beginning of second phase') % cut out first phase if applicable.
+    [st(ct), ~] = ginput(1)
     CA = CA(st(ct):end, :);
     close all
 
-    Opts.Method = 'Scale-Free';
+
+    %here we chose what method to use to identify optimal threshold. See documentation in "findoptRth"
+    Opts.Method = 'Scale-Free'; 
     Opts.Max = 10;
     Opts.Min = 3;
     thr(ct) = findoptRth(CA, Opts)
      ct = ct+1
 end
 
-thr = 0.9
-ct = 1
 %% now find hubs and assign degree:
-for i = 12:20
-    CA = readmatrix([filedir data(i).name]);
+for i = 1:length(files)
+    CA = readmatrix([filedir files(i).name]);
     CA = CA(st(ct):end, :);
 
     % if size(CA,1)<size(CA,2)

@@ -74,14 +74,10 @@ switch Opts.Method
         all_cors = reshape(Rij, 1, []); % Make 1d list of all correlations
         all_cors_sort = sort(all_cors, 'descend');
         m = (k*length(Rij)); %desired number of edges
-        if increaseprecision
-            Thr = vpa(all_cors_sort(ceil(m)));
-        else
-            Thr =  (all_cors_sort(ceil(m)));
-        end
+        Thr = vpa(all_cors_sort(ceil(m)))
 end
 
-if mean(nonzeros(Rij)) > 0.999
+if mean2(Rij>double(Thr)) > 0.75 %if most of the cells are not connected...
     increaseprecision = 1
     done = 0
 else

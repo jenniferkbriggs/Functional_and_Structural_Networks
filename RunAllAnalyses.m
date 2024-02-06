@@ -20,7 +20,7 @@ dataset2 = {'FullCoup/300cell/'}
 dataname = {'/seed1/', '/seed2/','/seed3/','/seed4/','/seed5/'}
 datapath = '/Volumes/Briggs_10TB/NetworkPaper'
 slash = '/';
-cellperc = .1; %percentage of cells to look at
+cellperc = .1; %percentage of cells to look at (if you are looking at top x% or something)
 %Names = {'gCoup = .12 pS' ,'gCoup = .06 pS', 'gCoup = .03 pS'};
 
 %You can either set the threshold or automatically choose a threshold based
