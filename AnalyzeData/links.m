@@ -14,6 +14,7 @@ function [N, Adj, kpercent, histArrayPercShort,pval,Rij,s] = links(calciumT, Thr
     % If use print as subplot, also need:
     % Subplotnum
 %fig sets the figure number
+
 %% Outputs: 
 % N                  - number of edges for each cell
 % Adj                - adjacency matrix
@@ -23,6 +24,7 @@ function [N, Adj, kpercent, histArrayPercShort,pval,Rij,s] = links(calciumT, Thr
 % Rij                - Correlation coefficient matrix
 % s                  - How close the degree distribution is to a
 % "scale-free" distribution
+
 
 
 if ~exist('fig')
