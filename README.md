@@ -5,7 +5,7 @@ Managed by Jennifer Briggs 2022.
 
 ## Folder 2022Islet
 
-This is all the code used in the paper: "β-Cell intrinsic dynamics rather than gap junction structure dictates subpopulations in the islet functional network." by Briggs et al eLife 2023.
+This is all the code used in the paper: *Briggs, Jennifer K., et al. "Beta-cell intrinsic dynamics rather than gap junction structure dictates subpopulations in the islet functional network." Elife 12 (2023): e83147.*
 
 
 To run 'basic network analysis: (plot histogram and adjacency matrix)
