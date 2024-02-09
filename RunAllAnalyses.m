@@ -5,33 +5,32 @@
 clear all
 close all
 
-% setting paths and defining data location
-
-addpath('~/Documents/GitHub/UniversalCode/');
-addpath('~/Documents/GitHub/Simulation-Analysis/');
-addpath('~/Documents/GitHub/Simulations/');
-addpath('~/Documents/GitHub/Network-Analysis/');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%
+%Change current working directory to the Functional_and_Structural_Networks
+%Parent folder
+cd = pwd;
+addpath(genpath(cd)); %adding all subfolders to path
+
 savetime =  datestr(datetime('today'),'yyyymmdd');
 
-%%Things you set!
-dataset2 = {'FullCoup/300cell/'}
-dataname = {'/seed1/', '/seed2/','/seed3/','/seed4/','/seed5/'}
-datapath = '/Volumes/Briggs_10TB/NetworkPaper'
-slash = '/';
+%%This was just the file structure that I used to work with different
+%%experiments and trials
+dataset2 = {'ExampleData/simulation/ExampleSeeds/'}
+dataname = {'/seed1/', '/seed2/'}
+datapath = pwd
+
+
 cellperc = .1; %percentage of cells to look at (if you are looking at top x% or something)
-%Names = {'gCoup = .12 pS' ,'gCoup = .06 pS', 'gCoup = .03 pS'};
 
-%You can either set the threshold or automatically choose a threshold based
-%on degree distribution or average degree
-Manual_Th = 0 %set to 1 if you want to choose a threshold
-Threshold = .9995; %Set R_th for network analysis - now set that threshold
+%You can either set the threshold or automatically choose a threshold using
+%optRth.m
+Manual_Th = 0; %set to 1 if you want to choose a threshold, 0 will call optRth.m
+Threshold = .9995; %If Manual_Th = 1, you need to set a threshold. Otherwise this will be overwritten
 
-savename = ['2nd_Phase300Cell' savetime]; 
+savename = ['savename' savetime]; 
 
-gjconnectionprob = 1 %define whether network to compare to functional network is gj connections or metabolism
-%%% 
+gjconnectionprob = 1 %define whether you want to compare the functional network to gap junctions (1) or metabolism (0)
 
 %Set options for network analysis
 Opts.figs = 0;
@@ -46,42 +45,57 @@ fig = 1; %counter for figures
 %define data lengths
 seeds = length(dataname);
 Isizes = length(dataset2);
-
-
 %% Import Data
 
-ca = struct;
+%make data structures for calcium (ca) and parameters (such as katp, kglyc,
+%etc, (Rvars). 
+ca = struct; 
 Rvars = struct;
 
+%% Loading Data %%
 tic
 for l = 1:length(dataset2)
     for i = 1:length(dataname)
     disp(['Importing ' cell2mat(dataset2(l))])
-    capath = fullfile(datapath, dataset2(l), dataname(i), 'calcium.txt');
+    capath = fullfile(datapath, dataset2(l), dataname(i), 'calcium.txt'); 
     casize = importdata(cell2mat(capath));
+
+    %this is just a big loop to help ensure that all of the calcium arrays
+    %are equal sizes
     if i == 1
        ca2(l).data(:,:,i) = casize;
     else
        sizes = [size(casize,1), size(ca2(l).data(:,:,i-1),1)]
-       [sizemin,seedmin] = min(sizes)
+       [sizemin,seedmin] = min(sizes);
        for tt = 1:l
        ca2(tt).data(sizemin+1:end,:,:)=[]
        end
        casize(sizemin+1:end,:)=[];
        ca2(l).data(:,:,i) = casize;
     end
+
+    %extracting information
     ca2(l).name = dataset2(l);
     
+    %positions
     pospath = fullfile(datapath, dataset2(l), dataname(i), 'XYZpos.txt');
     pos(l).data(:,:,i) = importdata(cell2mat(pospath));
     pos(l).name = dataset2(l);
-    
+
+    %Gap Junction Connections
     connpath = fullfile(datapath, dataset2(l), dataname(i), 'NN10A.txt');
-    conn(l).data(:,:,i) = importdata(cell2mat(connpath));    
+    %this variable contains the gap junction connection structure in the
+    %simulation. Each row (i) corresponds to cell (i) and each column contains
+    %the index of the other cells that cell (i) is connected to. -1 is the
+    %filler for cells without connections. BUT this is written in C, so the
+    %indexing in matlab is the index +1
+    conn(l).data(:,:,i) = importdata(cell2mat(connpath));  
+
+    % extract second phase of calcium
     calcium = ca2(l).data(:,:,i);    
     ca(l).data(:,:,i) = calcium(2000:end,:); %second phase only
 
-    
+    % Extract parameters such as Kglyc, Katp, etc. 
     varspath = fullfile(datapath, dataset2(l), dataname(i), 'RandomVars.txt');
     Rvars(l).data(:,:,i) = importdata(cell2mat(varspath));
     Rvars(l).name = dataset2(l);
@@ -99,8 +113,7 @@ toc
 
 clear casize sizes sizemin seed min tt
 
-%fig1.Position = [325 32 1132 892.5000];
-% 
+
 %% Run Network Analysis
 Links2 = struct;
 Links2.N = struct;
