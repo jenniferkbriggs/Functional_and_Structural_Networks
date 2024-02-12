@@ -6,6 +6,7 @@ clear all
 close all
 
 
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%
 %Change current working directory to the Functional_and_Structural_Networks
 %Parent folder
@@ -17,7 +18,7 @@ savetime =  datestr(datetime('today'),'yyyymmdd');
 %%This was just the file structure that I used to work with different
 %%experiments and trials
 dataset2 = {'ExampleData/simulation/ExampleSeeds/'}
-dataname = {'/seed1/', '/seed2/'}
+dataname = {'/seed1/', '/seed2/'}; %these are your repeat trials
 datapath = pwd
 
 
@@ -30,7 +31,7 @@ Threshold = .9995; %If Manual_Th = 1, you need to set a threshold. Otherwise thi
 
 savename = ['savename' savetime]; 
 
-gjconnectionprob = 1 %define whether you want to compare the functional network to gap junctions (1) or metabolism (0)
+gjconnectionprob = 0 %define whether you want to compare the functional network to gap junctions (1) or metabolism (0)
 
 %Set options for network analysis
 Opts.figs = 0;
@@ -135,13 +136,13 @@ for l = 1:length(dataset2)
      %run links analysis
     [Links2.N(l).data(:,i), adjm(l).data(:,:,i), kperc(l).Islet(i).data , histArrayPercShort(i).data, Rij(l).Islet(i).data(:,:) ] = links(ca(l).data(:,:,i), Threshold,Opts,fig); %%This is where network analysis is perfromed
 
-    %sort
-   [Links2.sort(l).data(:,i), Links2.cellsort(l).data(:,i)]= sort(Links2.N(l).data(:,i));
+        %sort
+       [Links2.sort(l).data(:,i), Links2.cellsort(l).data(:,i)]= sort(Links2.N(l).data(:,i));
     end
 end
 
 
-%% Extract cell parameters
+%% Here is where we look at the parameter values corresponding to the functional network 
 %predefine objects
 Kglyc = struct;
 Kglyc.sort = struct;
@@ -154,74 +155,70 @@ Kglyc.low = struct;
 fig = fig+2
 for l = 1:length(dataset2)
     for i = 1:length(dataname)
-    [Kglyc.sort(l).data(:,i), Kglyc.cell(l).data(:,i)]=sort(Rvars(l).data(:,10,i)); %Sorts cells in ascending order based on Kglyc
-    Kglyc.kglyc(l).data(:,i) = (Rvars(l).data(:,10,i));
-    [cellnum] = length(Rvars(l).data(:,10,i));
-    numcell = cellperc*cellnum;
-    randomcell = randi(cellnum,numcell,1);
+    %Sort cells in ascending order based on Kglyc. 'sort' is the parameter
+    %value and 'cell' is the corresponding cell index.
+    [Kglyc.sort(l).data(:,i), Kglyc.cell(l).data(:,i)]=sort(Rvars(l).data(:,10,i));
+    Kglyc.kglyc(l).data(:,i) = (Rvars(l).data(:,10,i)); %unsorted parameter value
+
+
+
+    [cellnum] = length(Rvars(l).data(:,10,i));%just extracting how many cells there are.
+    numcell = cellperc*cellnum; %cellperc was set above for looking at the top x% of cells. 
+    randomcell = randi(cellnum,numcell,1); %select random 10% of cells
+
+    %extract the degree of each cell
     N = Links2.N(l).data(:,i);
     cell = Kglyc.cell(l).data(:,i);
-    %%%%%%%%%%%
+
+
+    %extract the functional degree for the high, low, and random cells
+    %sorted by their kglyc value
     Kglyc.high(l).data = mean(N(cell(end-numcell:end)));
     Kglyc.rand(l).data = mean(N(cell(randomcell)));
     Kglyc.low(l).data = mean(N(cell(1:numcell)));
 
+    %actual degree highest, random, and lowest degree cells. Note that
+    %since we are working with a scale-free-like distribution, there are a
+    %lot of 0 degree cells. 
     Links2.high(l).data(:,i) = (Links2.cellsort(l).data(end-numcell:end,i));
     Links2.rand(l).data(:,i) = (Links2.cellsort(l).data(randomcell,i));
     Links2.low(l).data(:,i) = (Links2.cellsort(l).data(1:numcell,i));
     
+    % We just extracted cells/param values based on percentages but we can also
+    % Find hubs as defined by Johnston et al. 2016 
     a = find(kperc(l).Islet(i).data  > 60);
     hubthreshold = (a(1));
     b = find(kperc(l).Islet(i).data  <= 60);
-    
-    connect = sum(adjm(l).data(:,:,i));
+    connect = sum(adjm(l).data(:,:,i)); 
     Hubs(l).hubby(i).data = find(connect>hubthreshold);%Number of cells linked to more than 60% of Islet
     hubby = Hubs(l).hubby(i).data;
     
-   
+   %looking at non hub cells
 	hublow = find(connect<=hubthreshold);
-    Hubs(l).hublow(i).data = hublow%find(connect<b(end));%Number of cells linked to more than 50% of Islet
-    hubmid = [1:size(calcium,2)];%Number of cells linked to more than 50% of Islet
-    hubmid(hublow) = [];
-    for iii = 1:length(hubby)
-    hubmid(find(hubmid == hubby(iii))) = [];
-    end
-    Hubs(l).hubmid(i).data = hubmid;
+    Hubs(l).hublow(i).data = hublow;%Number of cells linked to more than 50% of Islet
 
-    Links2.high(l).data(:,i) = (Links2.cellsort(l).data(end-numcell:end,i));
-    Links2.rand(l).data(:,i) = (Links2.cellsort(l).data(randomcell,i));
-    Links2.low(l).data(:,i) = (Links2.cellsort(l).data(1:numcell,i));
-    
+    %extract kglyc values for hubs/con hubs
     Kglyc.hubs(l).data(:,i) = mean(Kglyc.kglyc(l).data(hubby,i));
-    Kglyc.hubsmid(l).data(:,i) = mean(Kglyc.kglyc(l).data(hubmid,i));
     Kglyc.hubslow(l).data(:,i) = mean(Kglyc.kglyc(l).data(hublow,i));
-    Conny = sum((conn(1).data(:,:,i)~=-1)');
-    
-    
-    TotConn.hubs(l).data(:,i) =mean(Conny(hubby));
-    TotConn.hubslow(l).data(:,i) = mean(Conny(hublow));
-    
 
-    Katp.hubs(l).data(:,i) = mean(conn.data(hubby,1,i));
-    Katp.hubslow(l).data(:,i) = mean(conn.data(hublow,1,i));
-    
-    
-    % katp --- high low 
-
-    % Kglyc.high(l).data(:,i) = mean(Kglyc.kglyc(l).data(Links2.high(l).data,i));
-    % Kglyc.rand(l).data(:,i) = mean(Kglyc.kglyc(l).data(Links2.rand(l).data,i));
-    % Kglyc.low(l).data(:,i) = mean(Kglyc.kglyc(l).data(Links2.low(l).data,i));
-    % 
-
-
+    %extract kglyc values based on top x% of cells rather than hubs
     Kglyc.high(l).data(:,i) = mean(Kglyc.kglyc(l).data(Links2.high(l).data,i));
     Kglyc.rand(l).data(:,i) = mean(Kglyc.kglyc(l).data(Links2.rand(l).data,i));
     Kglyc.low(l).data(:,i) = mean(Kglyc.kglyc(l).data(Links2.low(l).data,i));
    
 
+    %extract STRUCTURAL network
+    Conny = sum((conn.data(:,:,i)~=-1)');
     
+    TotConn.hubs(l).data(:,i) =mean(Conny(hubby)); %average number of physical connections shared by hubs
+    TotConn.hubslow(l).data(:,i) = mean(Conny(hublow)); %average number of physical connections shared by non hubs
     
-    % average GJ conductance
+    Katp.hubs(l).data(:,i) = mean(conn.data(hubby,1,i));
+    Katp.hubslow(l).data(:,i) = mean(conn.data(hublow,1,i));
+
+    
+    % average GJ conductance is the sum of average gj conductance between
+    % connected cells
     gjconn = conn(1).data(:,:,i);
     gjconn = gjconn + 1;
     
@@ -235,117 +232,82 @@ for l = 1:length(dataset2)
         clear conduct
     end
      
+    %Find the gap junction conductance for hubs/non hubs
     Gcoup.hubs(l).data(:,i) = mean(GJconduct(i).data(hubby));
     Gcoup.hubslow(l).data(:,i) = mean(GJconduct(i).data(hublow));
 
-    %Gcoup.hubs_all(l).data(1:length(GJconduct(i).data(hubby)))
-
+    %extract kglyc values based on top x% of cells rather than hubs
     Gcoup.high(l).data(:,i) = mean(Rvars(l).data(Links2.high(l).data,2,i));
     Gcoup.rand(l).data(:,i) = mean(Rvars(l).data(Links2.rand(l).data,2,i));
     Gcoup.low(l).data(:,i) = mean(Rvars(l).data(Links2.low(l).data,2,i));
-    end
-    
-    %%%%%%%%%%% plots
-    if Opts.figs
-        fig = fig+1
-        figure(fig)
-
-    [h] = multiseedplotsave(fig,[Gcoup.high(l).data; Gcoup.rand(l).data; Gcoup.low(l).data], ...
-        ['Average Coupling Conductance for cells sorted by links_' Names{l}], ...
-        {'Highest 10% Links', 'Rand 10% Links', 'Lowest 10% Links'},...
-        {'gCoup [pS]'}, [savename '_Gcoup' Names{l}])
-
-    
-    fig = fig +1;
-    [h] = multiseedplotsave(fig,[Gcoup.hubs(l).data;Gcoup.hubslow(l).data], ...
-            ['Katp' Names{l}], ...
-            {'Hubs (>60% synchronization)', 'Low Links (< 20% synchronization)'},...
-            {'Katp '}, [savename 'Katp' Names{l}])
-    
-    fig = fig +1;
-    
-    fig = fig +1;
-    [h] = multiseedplotsave(fig,[Katp.hubs(l).data;Katp.hubslow(l).data], ...
-            ['Average Coupling Conductance for cells sorted by links' Names{l}], ...
-            {'Hubs (>60% synchronization)', 'Low Links (< 20% synchronization)'},...
-            {'gCoup [pS]'}, [savename '_Gcouphubs' Names{l}])
-    fig = fig +1;
-
-
-    [h] = multiseedplotsave(fig,[Kglyc.hubs(l).data; Kglyc.hubslow(l).data],...
-        ['Average Kglyc for cells sorted by links' Names{l}], {'Hubs (>60% synchronization)',  'Low Links (< 20% synchronization)'},...
-        'Kglyc', [savename '_Kglychubs' Names{l}]);
-        fig = fig +1;
-
-   [h] = multiseedplotsave(fig,[Kglyc.high(l).data; Kglyc.rand(l).data; Kglyc.low(l).data],...
-        ['Average Kglyc for cells sorted by links' Names{l}], {'Highest 10% Links', 'Rand 10% Links', 'Lowest 10% Links'},...
-        'Kglyc', [savename '_Kglyc' Names{l}]);
-
-    end
-    clear N cell
 end
 
- for i = 1:5
-[~,sorted] = sort(Links2.N.data(:,i));
-Gcoup.top10(i) = mean(GJconduct(i).data(sorted(end-99:end)))
-Gcoup.bottom90(i) = mean(GJconduct(i).data(sorted(1:end-99)))
-kglycdata = Rvars.data(:,10,i);
-katpdata = Rvars.data(:,1,i);
-Kglyc.top10(i) = mean(kglycdata(sorted(end-99:end)));
-Kglyc.bottom90(i) = mean(kglycdata(sorted(1:end-99)));
-Katp.top10(i) = mean(katpdata(sorted(end-99:end)));
-Katp.bottom90(i) = mean(katpdata(sorted(1:end-99)));
+    
+   clear N cell
 end
 
-%% Probability that a cell is linked given functional connection
+ for i = 1:size(dataname)
+    [~,sorted] = sort(Links2.N.data(:,i));
+    Gcoup.top10(i) = mean(GJconduct(i).data(sorted(end-numcell:end)))
+    Gcoup.bottom90(i) = mean(GJconduct(i).data(sorted(1:end-numcell)))
+    kglycdata = Rvars.data(:,10,i);
+    katpdata = Rvars.data(:,1,i);
+    Kglyc.top10(i) = mean(kglycdata(sorted(end-numcell:end)));
+    Kglyc.bottom90(i) = mean(kglycdata(sorted(1:end-numcell)));
+    Katp.top10(i) = mean(katpdata(sorted(end-numcell:end)));
+    Katp.bottom90(i) = mean(katpdata(sorted(1:end-numcell)));
+end
+
+%% FIGURE 4: Probability that a cell is linked given functional connection
 clear t counter
 for i = 1:Isizes
    for l = 1:seeds
        tic
 
-posit = pos(i).data(:,:,l);
-if length(Threshold) == 1
-        gjconn = conn(i).data(:,:,l);
-        gjconn = gjconn + 1; % Data is in CPP so we need to start with 1 instead of 0
-else
-    gjconn = conn(1).data(:,:,l);
-    gjconn = gjconn + 1;
-end
-        avgjconn(i,l) = sum(nnz(gjconn))/size(gjconn,1);
-        adj = adjm(i).data(:,:,l);
-        adj = adj - diag(diag(adj)); % Make adj matrix diags 0
+    posit = pos(i).data(:,:,l); %XYZ data
 
-  %Convert gjconn to look like adj
-  gj2adj = zeros(size(adj));
-t = 1;
-if gjconnectionprob ==1 %Create a network of gap junction connected cells
-    for c = 1:size(gjconn,1)
-        for n=1:size(gjconn,2)
-%             disp([c n])
-%             disp(gjconn(c,n))
-            if gjconn(c,n) ~= 0
-                 gj2adj(c,gjconn(c,n)) = 1;
-                 counter(t) = adj(c,gjconn(c,n));
-                 if isnan(counter(t))
-                     disp('oops')
-                 end
-                 t=t+1;
+    %get Structural connections
+    gjconn = conn(i).data(:,:,l);
+    gjconn = gjconn + 1; % Data is in C++ so we need to start with 1 instead of 0
+
+    %average number of structural connections
+    avgjconn(i,l) = sum(nnz(gjconn))/size(gjconn,1);
+
+    %functional connections
+    adj = adjm(i).data(:,:,l);
+    adj = adj - diag(diag(adj)); % Make adj matrix diags 0
+
+  %Convert gjconn to an adjacency matrix (structural network)
+   gj2adj = zeros(size(adj));
+        t = 1;
+        if gjconnectionprob == 1 %Create a network of gap junction connected cells
+            for c = 1:size(gjconn,1)
+                for n=1:size(gjconn,2)
+                    if gjconn(c,n) ~= 0
+                         gj2adj(c,gjconn(c,n)) = 1;
+                         counter(t) = adj(c,gjconn(c,n));
+                         if isnan(counter(t))
+                             disp('oops')
+                         end
+                         t=t+1;
+                    end
+                end  
             end
-        end  
+        end
+
+    if 1
+    dist = sqrt((posit(:,1)-posit(:,1)').^2+(posit(:,2)-posit(:,2)').^2+...
+    (posit(:,3)-posit(:,3)').^2);
+    dist(dist==0)=100;
     end
-end
-posit = pos(1).data(:,:,l);
-if 1
-dist = sqrt((posit(:,1)-posit(:,1)').^2+(posit(:,2)-posit(:,2)').^2+...
-(posit(:,3)-posit(:,3)').^2);
-dist(dist==0)=100;
-end
-target = mean2(Rvars(i).data(:,10,l)) +1*std(Rvars(i).data(:,10,l))
+
+    %threshold for similar kglyc
+    target = mean2(Rvars(i).data(:,10,l)) + 1*std(Rvars(i).data(:,10,l)); 
 
 if gjconnectionprob == 0 %Create a network of kglyc cells > some value
     disty = []
 
-    for c = 1:1000
+    for c = 1:cellnum %for each cell, 
             connectq = gjconn(c,:);
             connectq = unique(nonzeros(connectq));
             connectq1 = gjconn(connectq,:);
@@ -356,33 +318,28 @@ if gjconnectionprob == 0 %Create a network of kglyc cells > some value
             connectqall(find(connectqall == c))=[];
             counter = [];
             disty = [disty; dist(c,connectqall)'];
-         for n=1:1000
-%             if nonzeros(connectqall == n)
-%                counter = [counter n];
-            if 0
-            if Rvars(i).data(c,10,l) > target| Rvars(i).data(n,10,l) > target 
-            gj2adj(c,n) = 1;%.5*(Rvars(i).data(c,2,l)+Rvars(i).data(n,2,l));         
-            end
-            else %if abs((Rvars(i).data(c,10,l)-Rvars(i).data(n,10,l)))<3.6056e-05 & n~=c&dist(c,n)<.25;
-            gj2adj(c,n) = abs((Rvars(i).data(c,10,l)-Rvars(i).data(n,10,l)));
-            end
-%              end
-            
-        end  
+         for n=1:cellnum
+                gj2adj(c,n) = abs((Rvars(i).data(c,10,l)-Rvars(i).data(n,10,l)));     %setting up the matrix of the difference between each kglyc  
+         end  
     end
  
-  gj2adj(dist > .15) = 0;
-  %gj2adj = (gj2adj>(mean2(nonzeros(gj2adj)) + 0.5*std(nonzeros(gj2adj),0,'all')));
+  gj2adj(dist > .15) = 0; %distance has to be restricted.
+
+  %draw a connection based on if kglyc is more similar than islet average
   gj2adj = gj2adj<(mean2(nonzeros(gj2adj))-0*std(nonzeros(gj2adj),0,'all')) & gj2adj>0;
-  gj2adj = double(gj2adj);
+
+  gj2adj = double(gj2adj); %now the adjacency graph is binary
 end
 % 
 
-%HERE we calculate the shortest path of the weighted graph : used in figure
-%4
+%% FIGURE 5: shortest path of the weighted graph :
     mm(l) = mean(sum(gj2adj, 'omitnan'));
-    %gjconduct = Rvars(i).data(:,2,l); %Weight by Metabolism
-    gjconduct = Rvars(i).data(:,10,l);  %Weight by GJ
+    
+    if gjconnectionprob
+        gjconduct = Rvars(i).data(:,10,l);  %Weight by GJ
+    else
+        gjconduct = Rvars(i).data(:,2,l); %Weight by Metabolism
+    end
     [distweighted(:,:,l), adjw] = weightednet(gj2adj, gjconduct,0); %outputs graph weighted by inverse of conductance
     [Length, syncD_all, nonsyncD_all] = WeightedDistEqualbasedonCell(adj,adjw,string(l)); %calculates the weight and distance for syncrhonized and non syncrhonized cells
 

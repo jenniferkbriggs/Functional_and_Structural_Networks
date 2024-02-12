@@ -1,11 +1,16 @@
-function [dist,adjw] = weightednet(gj2adj, gjconduct,gjconn)
+function [dist,adjw] = weightednet(gj2adj, gjconduct,example)
 %calculates the shortest path of a weighted network
 % gj2adj: Adjacency Matrix
 % gjconduct: Weighting variable
-% gjconn: binary variable which allow you to visualize the analysis based
+% example: binary variable which allow you to visualize the analysis based
 % on a simple adjacency matrix
+
+%OUTPUTS: 
+% -- dist: weighted distances between cell
+% -- adjw: adjacency matrix weighted by gjconduct
+
 % Jennifer Briggs 2021
-    if gjconn == 1
+    if example == 1
         gj2adj = [0 1 1 0; 1 0 0 0; 1 0 0 1; 0 0 1 0],
         gjconduct = [1 2 3 2]
     end
@@ -16,7 +21,7 @@ function [dist,adjw] = weightednet(gj2adj, gjconduct,gjconn)
     A = sparse(adjw);
     dist = distances(graph(A, 'upper'));
     
-    if gjconn == 1
+    if example == 1
        view(biograph(A,[],'ShowWeights','on'))
     end
 
