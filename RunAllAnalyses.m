@@ -142,7 +142,7 @@ for l = 1:length(dataset2)
 end
 
 
-%% Here is where we look at the parameter values corresponding to the functional network 
+%% Here is where we look at the parameter values corresponding to the functional network (mostly figure 1)
 %predefine objects
 Kglyc = struct;
 Kglyc.sort = struct;
@@ -343,18 +343,23 @@ end
     [distweighted(:,:,l), adjw] = weightednet(gj2adj, gjconduct,0); %outputs graph weighted by inverse of conductance
     [Length, syncD_all, nonsyncD_all] = WeightedDistEqualbasedonCell(adj,adjw,string(l)); %calculates the weight and distance for syncrhonized and non syncrhonized cells
 
+
+    %If you don't care about separating by distances, just calculate the
+    %weighted distances for all syncrhonzied cells
     [col,row] = find(adj); %finding edges
     dd = distweighted(:,:,l);
     dd(isinf(dd))= NaN; %NaN if there is no path between two cell pairs
     dd(dd==0) = NaN;
     for jj = 1:length(col)
-    ShortestpathSync(jj) = dd(col(jj),row(jj));
+        ShortestpathSync(jj) = dd(col(jj),row(jj));
     end
     numcells = length(adj);
      
     x=[];
     y=[];
-    if 0
+
+
+%% SOME of Figure 7: 
         [Net.L(i,l),Net.Lrand(i,l), Net.Eglob(i,l), ... 
          Net.Erand(i,l), Net.Eloc(i,l), Net.nopath(i,l),...
          ~, Net.Cavg(i,l), Net.Crand(i,l)] = graphProp(adj,x,y,0)
@@ -366,18 +371,6 @@ end
 
 
 
-    shortpathsync(l) = mean(ShortestpathSync, 'omitnan');
-    shortpathnosync(l) = mean(mean(dd, 'omitnan'), 'omitnan');
-
-    mShortestpath_gjNOsync(l) = mean(mean(Shortestpath_gjNOsync, 'omitnan'), 'omitnan');
-    mShortestpath_syncNOgj(l) = mean(mean(Shortestpath_syncNOgj, 'omitnan'), 'omitnan');
-    mShortestpath_syncANDgj(l) = mean(mean(Shortestpath_syncANDgj, 'omitnan'), 'omitnan');
-
-    mShortestpath_sync(l) = mean(mean(Shortestpath_sync, 'omitnan'), 'omitnan');
-
-    clear ShortestpathSync  
-    clear Shortestpath_syncANDgj Shortestpath_syncNOgj Shortestpath_gjNOsync ShortestpathSync
-end
     Pr_gj(i,l) = (sum(nnz(gj2adj))/2)/(((size(gj2adj,1)-1)*(size(gj2adj,1))/2)); %Probability of gj = tot connections/tot possible connections
    %Pr_gj(i,l) = (sum(nnz(gjconn))/2)/(15*size(gjconn,1)); %Probability of gj = tot connections/tot possible connections
    Pr_syn(i,l) = (sum(nnz(adj))/2)/(((size(adj,1)-1)*(size(adj,1))/2)); %Probability of gj = tot connections/tot possible connections
