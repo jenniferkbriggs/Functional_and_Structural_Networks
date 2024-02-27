@@ -1,4 +1,4 @@
-function CellTC = STDanalysis(images, CellMask,thr,opts)
+function CellTC = STDanalysis(images, CellMask, thr, opts)
 %Jennifer Briggs 02.2022
 %This function takes a time course of pixels with masks differentiating
 %cells and removes pixels within that mask that do not correlate with the
@@ -6,6 +6,7 @@ function CellTC = STDanalysis(images, CellMask,thr,opts)
 
 %images is the image file in matrix form (x,y,t). Currently only accepting
 %3D matrices (e.g. no z stacks) so z stacks should be fed in separately. 
+
 
 %opts is a structure of options:
 %opts.figs = 1 if want a gif to see the pixels be removed

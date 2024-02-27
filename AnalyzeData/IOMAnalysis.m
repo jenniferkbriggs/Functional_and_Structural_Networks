@@ -1,9 +1,9 @@
 %% Analyze IOM:
-cd('/Volumes/Briggs_10TB/NetworkPaper/IOMSlow/')
 %clear all 
 close all
 %predefine threshold with very high variable precision
 
+filesdir = ['./ExampleData/simulation/IOM/Archive/']
 if 0 %change to 0 to do variable precision
     stoc = 1;
     rng(3)
@@ -12,10 +12,10 @@ else
     stoc = 0
 end
 
-for i = 1:5
-    Params = readmatrix(['IOM2_set11_250cell_' num2str(i) '_parameters.csv']); %cell, Kglyc, KATP
-    Conduct = readmatrix(['IOM2_set11_250cell_' num2str(i) '_adjacency_matrix.csv']);
-    Ca5 = readmatrix(['IOM2_set11_250cell_' num2str(i) '_calcium.csv']);
+for i = 1
+    Params = readmatrix([filesdir 'parameters.csv']); %cell, Kglyc, KATP
+    Conduct = readmatrix([filesdir 'GJmatrix.csv']);
+    Ca5 = readmatrix([filesdir 'Calcium.csv']);
    
     time = Ca5(:,1);
     Ca5(:,1) = [];
@@ -39,16 +39,17 @@ for i = 1:5
     Opts.avDeg = 3
     Opts.Min = 0
     Opts.Method = 'Degree'
-   %thr(i) = findoptRth(Ca5, Opts)
+   thr(i) = findoptRth(Ca5, Opts)
+% 
+%    %fast:
+%     %Adj =  double(Rij>0.9999993);
+%     %Adj = double(Rij>0.9999994)
+%    %slow:
+%     Adj =  double(Rij>0.999999999);
+%  %   Adj = double(Rij > thr(i));
+%    % Adj = double(Rij < 0.99999871513);
 
-   %fast:
-    %Adj =  double(Rij>0.9999993);
-    %Adj = double(Rij>0.9999994)
-   %slow:
-    Adj =  double(Rij>0.999999999);
- %   Adj = double(Rij > thr(i));
-   % Adj = double(Rij < 0.99999871513);
-
+    Adj = double(Rij > thr(i));
    [~,sorted] = sort(sum(Adj));
 
    numcell = length(Conduct);
@@ -70,7 +71,7 @@ for i = 1:5
     hubs_Gcoup(i,1:length(Hubs)) = Gcoup(Hubs);
     nonhubs_Gcoup(i,1:length(nonHubs)) = Gcoup(nonHubs);
 
-    degrees(i,:) = sum(Adj)./max(sum(Adj));
+    degrees(i,1:length(Adj)) = sum(Adj)./max(sum(Adj));
 
     top10_kglyc(i) = mean(Params(top10,2));
     bottom90_klgyc(i) = mean(Params(bottom90,2));
@@ -80,23 +81,14 @@ for i = 1:5
     bottom90_katp(i) = mean(Params(bottom90,3));
 end
 
-for i = 1:5
-Nad_hub(1:length(find(~isnan(Hub_indx(:,i)))),i) = NAD(Hub_indx(~isnan(Hub_indx(:,i)),i));
-end
 
-for i = 1:5
+for i = 1
 kglyc(i,:) = [mean(nonzeros(hubs_kglyc(i,:))), mean(nonzeros(nonhubs_kglyc(i,:)))];
 katp(i,:) = [mean(nonzeros(hubs_katp(i,:))), mean(nonzeros(nonhubs_katp(i,:)))];
 gcoup(i,:) = [mean(nonzeros(hubs_Gcoup(i,:))), mean(nonzeros(nonhubs_Gcoup(i,:)))];
 end
 
-for i = 1:5
-nonhub_indx(1:length(setxor([1:length(Adj)], Hub_indx(~isnan(Hub_indx(:,i))))),i) = setxor([1:length(Adj)], Hub_indx(~isnan(Hub_indx(:,i))));
-end
 
-for i = 1:5
-nonhub_nad(1:length(setxor([1:length(Adj)], Hub_indx(~isnan(Hub_indx(:,i))))),i) = NAD(nonhub_indx(find(nonhub_indx(:,i)~=0),i),i)
-end
 
 % %Look at graph:
 % G = graph(Conduct>0)

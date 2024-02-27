@@ -81,7 +81,7 @@ switch Opts.Method
         end
 end
 
-if mean2(Rij>double(Thr)) > 0.75 %if most of the cells are  connected...
+if mean2(Rij>=double(Thr)) > 0.75 %if most of the cells are  connected...
     increaseprecision = 1
     done = 0
 else
