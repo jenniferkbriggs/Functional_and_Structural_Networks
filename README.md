@@ -3,7 +3,8 @@ This is all the code used in the paper: *Briggs, Jennifer K., et al. "Beta-cell 
 
 This directory is used for running network analysis on time courses. Particularly, this code was developed for calcium and electrical signals in the Islets of Langerhans but may be used for other systems.
 
-Managed by Jennifer Briggs 2022.
+Managed by Jennifer Briggs 2022. If you have particular questions, feel free to reach out: Jennifer.briggs@cuanschutz.edu
+
 
 
 ## Getting started
