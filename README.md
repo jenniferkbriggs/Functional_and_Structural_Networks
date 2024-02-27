@@ -7,11 +7,25 @@ Managed by Jennifer Briggs 2022.
 
 
 ## Getting started
-In Briggs et al., Elife 2023, we study the relationships between structural and functional networks in the islet of Langerhans. We use two simulations of the islet and experimental data. The Cha-Noma fast oscillation model of the islet can be found in folder: *FastOscillation_sim* (this code is not fully commented). 
+In Briggs et al., Elife 2023, we study the relationships between structural and functional networks in the islet of Langerhans. We use two simulations of the islet and experimental data. The Cha-Noma fast oscillation model of the islet can be found in folder: **FastOscillation_sim** (this code is not fully commented). 
 
-The easiest way to explore analysis for all *simulated data* is to use the *RunAllAnalysis.m* script. This script will go through analysis for Figures 1, 4, 5, and 7 in the paper. 
+The easiest way to explore analysis for all **simulated data** is to use the **RunAnalysis_simulation.m** script in the Analyze Data folder. This script will go through analysis for Figures 1, 4, 5, and 7 in the paper. 
 
 ## Example Data
 This directory has example data from the manuscript that can be used to learn about the code. Due to space limitations on github, we uploaded two seeds of the small 300 cell fast oscillation model and one seed of the downsampled coupled slow oscillation model (IOM). These are not the exact same data used in the paper. For this reason, the results may differ. To simulate the 1000 cell fast oscillation model, use code in **FastOscillation_Sim**. To simulate the coupled slow oscillation model (IOM), contact Dr Isabella Marinelli (i.marinelli@bham.ac.uk). We also include one csv of example experimental data. 
 
+
+## Analyze Data
+This directory contains all of the scripts used to analyze data. 
+
+**RunAnalysis_simulation.m** will run simulation analyses for the fast simulation corresponding to Figures 1, 4, 5, and 7 in the paper. 
+
+**AnalyzeExperimental.m** was used to create Figure 3 by analyzing experimental calcium traces and FRAP data. Note that the calcium traces are assumed to be in .csv format (see extract data). FRAP is also in .csv. with rows containing the rate of recovery of the corresponding cell. We refer the reader to Farnsworth, Nikki L., et al. The Journal of physiology 592.20 (2014): 4431-4446. for how to analyze FRAP data. 
+
+## Extract Data
+This repository contains code to convert imaging files into calcium csv (such as in ExampleData/experimental/exampleCA.csv). 
+
+When conducting network analysis, it is very important that the pixels which we consider part of cell (i) are actually part of cell (i) and not cell (j), for example. **STanalysis.m** helps us ensure that the pixels within a single cell mask are truly part of that cell.
+
+**ExtractImages.m** is a script used to convert .lsm/.czi files into calcium traces. This code calls **STanalysis.mat** and can be used to understand the CellMask variable loaded into STanalysis.m. However, because most people use ImageJ or some other software to extract the cell files, this code is not commented in detail and is not currently compatible with all computers and file structures.  
 
