@@ -17,7 +17,7 @@ savetime =  datestr(datetime('today'),'yyyymmdd');
 
 %%This was just the file structure that I used to work with different
 %%experiments and trials
-dataset2 = {'ExampleData/simulation/ExampleSeeds/'}
+dataset2 = {'ExampleData/simulation/FastOscillations/'}
 dataname = {'/seed1/', '/seed2/'}; %these are your repeat trials
 datapath = pwd
 
@@ -31,7 +31,7 @@ Threshold = .9995; %If Manual_Th = 1, you need to set a threshold. Otherwise thi
 
 savename = ['savename' savetime]; 
 
-gjconnectionprob = 0 %define whether you want to compare the functional network to gap junctions (1) or metabolism (0)
+gjconnectionprob = 1 %define whether you want to compare the functional network to gap junctions (1) or metabolism (0)
 
 %Set options for network analysis
 Opts.figs = 0;
@@ -102,10 +102,10 @@ for l = 1:length(dataset2)
     Rvars(l).name = dataset2(l);
     fig1 = figure(1)%, subplot(Opts.subplotdim+l)
     
-    if i == 1
-    subplot(Opts.subplotdim + l)
-    plot(ca(l).data), xlabel('Time'), ylabel('Ca'), title(dataset2(l))
-    end
+    
+    nexttile
+    plot(ca(l).data(:,:,i)), xlabel('Time'), ylabel('Ca'), title(dataname(i))
+    
     
    
     end
@@ -359,7 +359,7 @@ end
     y=[];
 
 
-%% SOME of Figure 7: 
+%% experimental part of Figure 7: 
         [Net.L(i,l),Net.Lrand(i,l), Net.Eglob(i,l), ... 
          Net.Erand(i,l), Net.Eloc(i,l), Net.nopath(i,l),...
          ~, Net.Cavg(i,l), Net.Crand(i,l)] = graphProp(adj,x,y,0)
@@ -391,341 +391,22 @@ end
     
  
     both = (gj2adj == adj);
-%     if sum(counter) ~= sum(nnz(both))
-%         disp('Error')
-%         pause(5)
-%     end
-    
-%     hubby = Hubs(i).hubby(l).data;
-%     hublow = Hubs(i).hublow(l).data;
-% %     hubmid = Hubs(i).hubmid(l).data;
-% 
-% 
-%     Pr_gjhub(i,l,1) = mean(sum(gj2adj(hubby,:),2, 'omitnan')/(((size(adj,1)-1)*(size(adj,1))/2))); %Probability of gj = tot connections/tot possible connections
-% %     Pr_gjhub(i,l,2) = mean(sum(gj2adj(hubmid,:),2, 'omitnan')/(((size(adj,1)-1)*(size(adj,1))/2))); %Probability of gj = tot connections/tot possible connections
-%     Pr_gjhub(i,l,2) = mean(sum(gj2adj(hublow,:),2, 'omitnan')/(((size(adj,1)-1)*(size(adj,1))/2))); %Probability of gj = tot connections/tot possible connections
-% 
-%     Pr_bothhub(i,l,1) = mean(sum(both(hubby,:),2, 'omitnan')/(((size(both,1)-1)*(size(both,1))/2)));
-% %     Pr_bothhub(i,l,2) = mean(sum(both(hubmid,:),2, 'omitnan')/(((size(both,1)-1)*(size(both,1))/2)));
-%     Pr_bothhub(i,l,2) = mean(sum(both(hublow,:),2, 'omitnan')/(((size(both,1)-1)*(size(both,1))/2)));
-% 
-%    Pr_synhub(i,l,1) = mean(sum(adj(hubby,:),2, 'omitnan')/(((size(adj,1)-1)*(size(adj,1)))/2)); %Probability of gj = tot connections/tot possible connections
-% %    Pr_synhub(i,l,2) = mean(sum(adj(hubmid,:),2, 'omitnan')/(((size(adj,1)-1)*(size(adj,1)))/2)); %Probability of gj = tot connections/tot possible connections
-%    Pr_synhub(i,l,2) = mean(sum(adj(hublow,:),2, 'omitnan')/(((size(adj,1)-1)*(size(adj,1)))/2)); %Probability of gj = tot connections/tot possible connections
-% 
-% 
-% 
-%     Pr_syn_gvn_gjhub(i,l,1) = Pr_bothhub(i,l,1)/Pr_gjhub(i,l,1);
-%     Pr_gj_gvn_synhub(i,l,1) = Pr_bothhub(i,l,1)/Pr_synhub(i,l,1);
-% %     Pr_syn_gvn_gjhub(i,l,3) = Pr_bothhub(i,l,3)/Pr_gjhub(i,l,3);
-% %     Pr_gj_gvn_synhub(i,l,3) = Pr_bothhub(i,l,3)/Pr_synhub(i,l,3);
-%     Pr_syn_gvn_gjhub(i,l,2) = Pr_bothhub(i,l,2)/Pr_gjhub(i,l,2);
-%     Pr_gj_gvn_synhub(i,l,2) = Pr_bothhub(i,l,2)/Pr_synhub(i,l,2);
-%         Hubcheck = 1;
+
 
     Pr_both(i,l) = (sum(nnz(both))/2)/(((size(both,1)-1)*(size(both,1))/2));
-%     Pr_both2(i,l) = (sum(nnz(counter)))/(length(counter));
 
-    Pr_syn_gvn_gj(i,l) = Pr_both(i,l)/Pr_gj(i,l)
-    Pr_gj_gvn_syn(i,l) = Pr_both(i,l)/Pr_syn(i,l)
-%     if length() > 1
-%     [cellnum] = length(Rvars(1).data(:,10,l));
-%     else
-%     [cellnum] = length(Rvars(i).data(:,10,l));
-%     end
+    %if gjconnectionprob == 0 then this is actual probability of
+    %syncrhonization given *metabolic* similarity and probability of
+    %*metabolic* similarity given synchronization. Otherwise it is gap
+    %junction and synchronization
+    Pr_syn_gvn_gj(i,l) = Pr_both(i,l)/Pr_gj(i,l);
+    Pr_gj_gvn_syn(i,l) = Pr_both(i,l)/Pr_syn(i,l); 
+
     Cpos =   (((size(adj,1)-1)*(size(adj,1))/2));
     Links2.Ci(i).data(:,l) = Links2.N(i).data(:,l)./Cpos;
-   % Cavg(i,l) = mean(Links2.Ci(i).data(:,l));
 
     clear counter
     toc
     end
 end
 
-
-%% Extra interesting - see how this changes with thresholds
-if Opts.figs
-fig = fig+1
-figure(fig)
-KG_table_all = [mean(Links2.N(1).data)];
-for iii = 2:length(dataset2)
-KG_table_all = [KG_table_all; mean(Links2.N(iii).data)];
-end
-[h] = multiseedplot6(fig,KG_table_all)
-set(gca,'XTickLabel',dataset2);
-title({'Average number of links in Islet'})
-ylabel({'Average number of links'})
-
-fig = fig+1
-figure(fig)
-KG_table_high =[ max(Links2.N(1).data)];
-for iii = 2:length(dataset2)
-KG_table_high = [KG_table_high; max(Links2.N(iii).data)];
-end
-[h] = multiseedplot6(fig,KG_table_high)
-set(gca,'XTickLabel',Names);
-title('Max connections')
-ylabel('Highest amount of connections in Islet')
-end
-%% Consider a hub a cell with 
-
-for i = 1:Isizes
-    for l = 1:seeds
-        N = Links2.N(i).data(:,l);
-        histArray=zeros(size(N))'; % prealocate
-% a forloop to count how many times you encounter in a particular value:
-            for n=1:length(N)
-                histArray(1,N(n)+1)=histArray(1,N(n)+1)+1; % every time you meet the particular value, you add 1 into to corresponding bin
-            end
-
-
-    histArray = histArray(2:end); % removing first number corresponding to 0 links
-    histArrayPerc=histArray.*100/sum(histArray); % converting into % via dividing # of cell with specific # of links by total # of links 
-    m=find(histArray)    % returns all indexes of non-zero elements of the array
-    maxNonZeroLinks=max(m);   % number of links to consider when normalizing probabilty
-    k=1:1:maxNonZeroLinks;            % index of # of links (starting with 0 links)
-    kpercent=k.*100/(maxNonZeroLinks);  % convert # of links into % of links
-    histArrayPercShort = histArrayPerc(1:maxNonZeroLinks);   % cropping the hisArray after the last non-0 value
-    histArrayShort = histArray(1:maxNonZeroLinks);
-    
-    hubindex = find(kpercent > 60) %Claim that hubs are any cell with >85% of connections
-    nonhubindex = find(kpercent <= 60)
-    highestconn = 0;
-    for k = 1:length(hubindex)
-        highestconn = [highestconn, find(N == hubindex(k))'];
-    end
-    lowconn = 0;
-    for k = 1:length(nonhubindex)
-        lowconn = [lowconn, find(N == nonhubindex(k))'];
-    end
-    highestconn(1) = [];
-    lowconn(1)=[];
-    [cellnum] = length(Rvars(i).data(:,10,l));
-
-    
-    Hubs(i).seed(l).data = highestconn;
-    Hubsindex(i).seed(l).data = hubindex;
-    Hubssum(l,i) = length(highestconn);
-    linknum(l,i) = mean(hubindex);
-   
-    Kglychub(l,i) = (mean(Rvars(i).data(highestconn,10,l))-mean(Rvars(i).data(:,10,l)))/mean(Rvars(i).data(:,10,l));
-    disp =  ((Rvars(i).data(highestconn,10,l))-mean(Rvars(i).data(:,10,l)))/mean(Rvars(i).data(:,10,l))
-    
-    end
-end
-
-%% Plot number of hubs cells
-if Opts.figs
-Hubcheck = 1;
-fig = fig+1
-figure(fig)
-[h] = multiseedplot6(fig,Hubssum')
-set(gca,'XTickLabel',Names);
-title({'Number of Hubs (Hub has > 60% of cell connection)'})
-ylabel({'Number of Hubs'})
-
-
-fig = fig+1
-figure(fig)
-
-[h] = multiseedplot6(fig,Kglychub')
-set(gca,'XTickLabel',Names);
-title({'Percent difference Klgyc in hubs vs Islet'})
-ylabel({'[Kglyc(hubs)-Kglyc(Islet)]/Kglyc(Islet)'})
-
-end
-%% 
-if Opts.figs
-if Hubcheck 
-for l = 1:length(dataset2)
-fig = fig +1;
-[h] = multiseedplotsave(fig,squeeze(Pr_syn_gvn_gjhub(l,:,:))', ...
-        ['Probability of Synchronization given Gap Junction' Names{l}], ...
-        {'Hubs (>60% synchronization)', 'Low Links (< 60% synchronization)'},...
-        {'Pr(Sync|GJ)'}, [savename '_Prsyncgvngjhubs' Names{l}])
-
-fig = fig +1;
-[h] = multiseedplotsave(fig,squeeze(Pr_gj_gvn_synhub(l,:,:))', ...
-        ['Probability of Gap Junction given Synchronization' Names{l}], ...
-        {'Hubs (>60% synchronization)','Low Links (< 60% synchronization)'},...
-        {'Pr(GJ|Sync)'}, [savename '_Prgjgvnsynchubs' Names{l}])
-    
-
-fig = fig +1;
-[h] = multiseedplotsave(fig,[Pr_syn_gvn_gj(l,:); Pr_gj_gvn_syn(l,:)], ...
-        ['Probabilities ' Names{l}], ...
-        {'Pr(Sync|GJ)', 'Pr(GJ|Sync)'},...
-        {'Probability'}, [savename '_ProabilityAll' Names{l}])
-
-end
-end
-end
-%% 
-%% 
-% fig = fig+1
-% figure(fig)
-%  [h] = multiseedplotsave(fig,Pr_both2,tit,xlab,ylab, savename)
-% [h] = multiseedplot6(fig,Pr_both2)
-% set(gca,'XTickLabel',dataset2);
-% title({'Probabilty of functional connection given GJ - Second Method'})
-% xlab = dataset2;
-%xlab = string(Threshold)
-xlab = Names
-if Opts.figs
-fig = fig+1
-figure(fig)
-% [h] = multiseedplot6(fig,Pr_gj_gvn_syn)
-% set(gca,'XTickLabel',dataset2);
-% title({'Probabilty of GJ given sync'})
-if Hubcheck
-tit = ['Probabilty of GJ given sync']
-[h] = multiseedplotsave(fig,Pr_gj_gvn_syn,tit,xlab,'Pr(GJ|Sync)', ['PRGJgvnsync'])
-end
-fig = fig +1 ;
-figure(fig)
-if Hubcheck
-
-tit = ['Probability of both GJ and Sync']
-[h] = multiseedplotsave(fig,Pr_both, tit,xlab,'Pr(both)', ['PRboth' Names{l}])
-end
-fig = fig +1 ;
-figure(fig)
-if Hubcheck 
-
-tit = ['Probability of both GJ']
-[h] = multiseedplotsave(fig,Pr_gj, tit,xlab,'Pr(gj)', ['PRGJ' Names{l}])
-end
-fig = fig +1 ;
-figure(fig)
-if Hubcheck 
-
-tit = ['Probability of Sync']
-[h] = multiseedplotsave(fig,Pr_syn, tit,xlab,'Pr(sync)', 'PRsync')
-
-end
-
-fig = fig+1
-figure(fig)
-[h] = multiseedplot6(fig,Pr_syn_gvn_gj)
-set(gca,'XTickLabel',Names);
-title({'Probabilty of functional connection given GJ'})
-% tit=({'Probabilty of functional connection given GJ'})
-% [h] = multiseedplotsave(fig,Pr_syn_gvn_gj,tit,xlab,'Pr(Sync|GJ)', 'PRsyncgvnGJ')
-
-fig = fig+1
-figure(fig)
-% 
-[h] = multiseedplot6(fig,Net.Cavg)
-set(gca,'XTickLabel',Names);
-title({'Clustering Coeffiecient'})
-% tit = 'Clustering Coeffiecient'
-% [h] = multiseedplotsave(fig,Net.Cavg,tit,xlab,'Clustering Coefficient', 'CCoef')
-% 
-
-
-fig = fig+1
-figure(fig)
-[h] = multiseedplot6(fig, Net.L)
-set(gca,'XTickLabel',Names);
-title({'Caracteristic Path Length (excluding pairs with no path)'})
-% tit = 'Caracteristic Path Length (excluding pairs with no path)';
-% [h] = multiseedplotsave(fig,Net.L,tit,xlab,'Path Length', 'PathLength')
-
-
-fig = fig+1
-figure(fig)
-[h] = multiseedplot6(fig,Net.Eglob)
-set(gca,'XTickLabel',Names);
-title({'Global Efficiency'})
-% tit = 'Global Efficiency';
-% [h] = multiseedplotsave(fig,Net.Eglob,tit,xlab,'Efficiency', 'Efficiency')
-
-
-fig = fig+1
-figure(fig)
-[h] = multiseedplot6(fig, S)
-set(gca,'XTickLabel',Names);
-title({'Small-world-ness'})
-% tit = 'Small-world-ness';
-% [h] = multiseedplotsave(fig,S,tit,xlab,'Small World-ness', 'Small World-ness')
-
-
-
-fig = fig+1
-figure(fig)
-[h] = multiseedplot6(fig, Lsm)
-set(gca,'XTickLabel',Names);
-title({'Path length/Random network path length'})
-% tit = 'Path length/Random network path length'
-% [h] = multiseedplotsave(fig,Lsm,tit,xlab,'L/L_{rand}', 'PathLengthRandom')
-% 
-
-
-fig = fig+1
-figure(fig)
-[h] = multiseedplot6(fig, Csm)
-set(gca,'XTickLabel',Names);
-title({'Clustering Coefficient/Random network Clustering Coefficient'})
-% tit = 'Clustering Coefficient/Random network Clustering Coefficient'
-% [h] = multiseedplotsave(fig,Csm,tit,xlab,'C/C_{rand}', 'CCRandom')
-
-
-fig = fig+1
-figure(fig)
-[h] = multiseedplot6(fig, Esm)
-set(gca,'XTickLabel',Names);
-title({'Efficiency/Random network efficiency'})
-% %
-% tit = {'Efficiency/Random network efficiency'}
-% [h] = multiseedplotsave(fig,Esm,tit,xlab,'E/E_{rand}', 'ERandom')
-
-fig = fig+1
-figure(fig)
-[h] = multiseedplot6(fig, Csm)
-set(gca,'XTickLabel',Names);
-title({'Efficiency/Random network efficiency'})
-
-fig = fig +1
-figure(fig)
-
-[h] = multiseedplot6(fig,Net.nopath)
-set(gca,'XTickLabel',Names);
-title({'% of pairs with no path'})
-% tit = '% of pairs with no path';
-% [h] = multiseedplotsave(fig,Net.nopath,tit,xlab,'% pairs with no path', 'no path')
-end
-%% plot phase
-    fig = fig+1
-% try
-% phaseinfo.rand(3)
-%  Isizes2 = Isizes
-% catch
-% Isizes2 = 2;
-% end
-if 0
-for l = 1:Isizes
-    for i = 1:seeds
-    [cellnum] = length(Rvars(l).data(:,10,i));
-    numcell = cellperc*cellnum;
-    randomcell = randi(cellnum,numcell,1);
-    N = Links2.N(l).data(:,i);
-
-    phaseinfo.high(l).data(:,i) = mean(N(phaseinfo.cell(l).data(end-numcell+1:end,i)));
-    phaseinfo.rand(l).data(:,i) = mean(N(randomcell));
-    phaseinfo.low(l).data(:,i) = mean(N(phaseinfo.cell(l).data(1:numcell,i)));
-    
-    end
-    if Opts.figs
-    figure(fig)
-    subplot(Opts.subplotdim+l)
-    [h] = multiseedplot6(fig,[phaseinfo.high(l).data; phaseinfo.rand(l).data; phaseinfo.low(l).data])
-    set(gca,'XTickLabel',{'High Phase (lagging)', 'Rand Links', 'Low Phase (leading)'});
-    title({'Average number of links' '(Islet Size = ' num2str(cellnum) 'cells)' Names{l}})
-    ylabel({'Links'})
-    end
-end
-end
-
-
-
-save('/Volumes/Briggs_2TB/SizeDependence/Analysis/Coup_Newclustering_savetime.mat')
